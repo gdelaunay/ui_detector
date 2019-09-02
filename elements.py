@@ -1,3 +1,4 @@
+from base64 import b64encode
 from abc import ABC, abstractmethod
 
 
@@ -40,13 +41,19 @@ class Image(Element):
         self.base64 = base64
 
     def redact_xml(self):
+        xml = ''
         pass
 
     def extract_image(self, original_image):
-        pass
+
+        cropped_image = original_image[self.ymin:self.ymax, self.xmin:self.xmax]
+
+        # TODO : Remove borders from cropped_image, compute new coordinates
+
+        self.image = cropped_image
 
     def set_base64(self):
-        pass
+        self.base64 = b64encode(self.image)
 
 
 class Icon(Element):
