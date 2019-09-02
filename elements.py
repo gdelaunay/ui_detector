@@ -28,8 +28,33 @@ class TextElement(Element):
     def compute_text_size(self):
         pass
 
-    def ocr_text_value(self, image):
+    def ocr_text_value(self, original_image):
         pass
 
 
+class Image(Element):
+
+    def __init__(self, coordinates, image=None, base64=None):
+        super().__init__(coordinates)
+        self.image = image
+        self.base64 = base64
+
+    def redact_xml(self):
+        pass
+
+    def extract_image(self, original_image):
+        pass
+
+    def set_base64(self):
+        pass
+
+
+class Icon(Element):
+
+    def __init__(self, coordinates, ptype=None):
+        super().__init__(coordinates)
+        self.ptype = ptype
+
+    def redact_xml(self):
+        pass
 
