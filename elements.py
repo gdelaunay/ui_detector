@@ -35,14 +35,25 @@ class TextElement(Element):
 
 class Image(Element):
 
-    def __init__(self, coordinates, image=None, base64=None):
+    def __init__(self, coordinates, image=None, b64=None):
         super().__init__(coordinates)
         self.image = image
-        self.base64 = base64
+        self.b64 = b64
 
     def redact_xml(self):
-        xml = ''
-        pass
+
+        generated_id = "id"
+        width = self.xmax - self.xmin
+        height = self.ymax - self.ymin
+
+        xml = '<g xmlns="http://www.w3.org/2000/svg" p:type="Shape" p:def="Evolus.Common:Bitmap" id="' + generated_id +\
+              '" transform="matrix(1,0,0,1,' + self.xmin + ',' + self.ymin + ')">\n' +\
+              '<p:metadata>\n' +\
+              '<p:property name="box"><![CDATA[' + width + ',' + height + ']]></p:property>\n' +\
+              '<p:property name="imageData"><![CDATA[' + width + ',' + height + ',' + self.b64 + ']]></p:property>\n' +\
+              '</p:metadata>\n' + '</g>'
+
+        return xml
 
     def extract_image(self, original_image):
 
@@ -53,7 +64,7 @@ class Image(Element):
         self.image = cropped_image
 
     def set_base64(self):
-        self.base64 = b64encode(self.image)
+        self.b64 = b64encode(self.image)
 
 
 class Icon(Element):
