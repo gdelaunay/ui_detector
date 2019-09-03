@@ -7,7 +7,7 @@ from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
 
 IMAGE_PATH = "testing_data/test0.jpg"
-MODEL_NAME = 'ui_detection_graph_483.pb'
+MODEL_NAME = 'ui_detection_graph_1471.pb'
 
 # Number of different classes to detect
 NUM_CLASSES = 19
@@ -62,6 +62,8 @@ def main(_):
             print(classes)
 
             selected_boxes, selected_classes, selected_scores = delete_overlapping_boxes(sess, boxes, classes, scores)
+            # np.squeeze(boxes), np.squeeze(classes), np.squeeze(scores)
+            # delete_overlapping_boxes(sess, boxes, classes, scores)
 
             # Visualization of the results
             vis_util.visualize_boxes_and_labels_on_image_array(
