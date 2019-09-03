@@ -1,6 +1,8 @@
 from base64 import b64encode
 from abc import ABC, abstractmethod
+from PIL import Image, ImageChops
 import cv2
+import numpy
 
 
 class Element(ABC):
@@ -35,7 +37,7 @@ class TextElement(Element):
         pass
 
 
-class Image(Element):
+class ImageElement(Element):
 
     def __init__(self, coordinates, image=None, b64=None):
         super().__init__(coordinates)
@@ -63,9 +65,9 @@ class Image(Element):
 
         cropped_image = original_image[self.ymin:self.ymax, self.xmin:self.xmax]
 
-        # TODO : Remove borders from cropped_image, compute new coordinates
+        borderless_image = remove_image_borders(cropped_image)
 
-        self.image = cropped_image
+        self.image = borderless_image
 
     def set_base64(self):
         _, encoded_image = cv2.imencode('.png', self.image)
@@ -80,4 +82,20 @@ class Icon(Element):
 
     def redact_xml(self):
         pass
+
+
+def remove_image_borders(image):
+
+    rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    pil_image = Image.fromarray(rgb_image)
+    bg = Image.new(pil_image.mode, pil_image.size, pil_image.getpixel((0, 0)))
+    diff = ImageChops.difference(pil_image, bg)
+    diff = ImageChops.add(diff, diff, 2.0, -100)
+    bbox = diff.getbbox()
+    if bbox:
+        pil_image = pil_image.crop(bbox)
+
+    cv2_image = cv2.cvtColor(numpy.array(pil_image), cv2.COLOR_RGB2BGR)
+
+    return cv2_image
 
