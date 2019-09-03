@@ -36,4 +36,16 @@ class Mockup:
 
     def generate_pencil_file(self):
 
-        pass
+        path = ""
+        page_file = open(path + "page_" + self.generated_id + ".xml", "w+")
+        page_file.write(self.xml_page)
+        page_file.close()
+
+        content_file_xml = ' <Document xmlns="http://www.evolus.vn/Namespace/Pencil"> \n ' \
+                           ' <Properties> \n <Property name="activeId">UNIQUEID</Property> \n </Properties> \n ' \
+                           ' <Pages> \n <Page href="page_UNIQUEID.xml"/> \n </Pages> \n </Document> \n'
+        content_file = open(path + "content.xml", "w+")
+        content_file.write(content_file_xml)
+        content_file.close()
+
+        # TODO : compress files to .zip then move to .epz
