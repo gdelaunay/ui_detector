@@ -4,11 +4,12 @@ from abc import ABC, abstractmethod
 
 class Element(ABC):
 
-    def __init__(self, coordinates):
+    def __init__(self, coordinates, xml_element=None):
         self.ymin = coordinates[0]
         self.xmin = coordinates[1]
         self.ymax = coordinates[2]
         self.xmax = coordinates[3]
+        self.xml_element = xml_element
 
     @abstractmethod
     def redact_xml(self):
@@ -46,14 +47,14 @@ class Image(Element):
         width = self.xmax - self.xmin
         height = self.ymax - self.ymin
 
-        xml = '<g xmlns="http://www.w3.org/2000/svg" p:type="Shape" p:def="Evolus.Common:Bitmap" id="' + generated_id +\
-              '" transform="matrix(1,0,0,1,' + self.xmin + ',' + self.ymin + ')">\n' +\
-              '<p:metadata>\n' +\
-              '<p:property name="box"><![CDATA[' + width + ',' + height + ']]></p:property>\n' +\
-              '<p:property name="imageData"><![CDATA[' + width + ',' + height + ',' + self.b64 + ']]></p:property>\n' +\
-              '</p:metadata>\n' + '</g>'
-
-        return xml
+        self.xml_element = \
+            ' <g xmlns="http://www.w3.org/2000/svg" p:type="Shape" p:def="Evolus.Common:Bitmap" id="' + generated_id + \
+            '" transform="matrix(1,0,0,1,' + self.xmin + ',' + self.ymin + ')"> \n ' \
+            ' <p:metadata> \n ' \
+            ' <p:property name="box"><![CDATA[' + width + ',' + height + ']]></p:property> \n ' + \
+            ' <p:property name="imageData"><![CDATA[' + width + ',' + height + ',' + self.b64 + ']]></p:property> \n ' \
+            ' </p:metadata> \n ' \
+            ' </g>'
 
     def extract_image(self, original_image):
 
