@@ -1,5 +1,6 @@
 from base64 import b64encode
 from abc import ABC, abstractmethod
+import cv2
 
 
 class Element(ABC):
@@ -44,17 +45,19 @@ class Image(Element):
     def redact_xml(self):
 
         generated_id = "id"
-        width = self.xmax - self.xmin
-        height = self.ymax - self.ymin
+        first_point = str(int(self.xmin)) + "," + str(int(self.ymin))
+        width = int(self.xmax - self.xmin)
+        height = int(self.ymax - self.ymin)
+        size = str(width) + "," + str(height)
 
         self.xml_element = \
             ' <g xmlns="http://www.w3.org/2000/svg" p:type="Shape" p:def="Evolus.Common:Bitmap" id="' + generated_id + \
-            '" transform="matrix(1,0,0,1,' + self.xmin + ',' + self.ymin + ')"> \n ' \
+            '" transform="matrix(1,0,0,1,' + first_point + ')"> \n ' \
             ' <p:metadata> \n ' \
-            ' <p:property name="box"><![CDATA[' + width + ',' + height + ']]></p:property> \n ' + \
-            ' <p:property name="imageData"><![CDATA[' + width + ',' + height + ',' + self.b64 + ']]></p:property> \n ' \
+            ' <p:property name="box"><![CDATA[' + size + ']]></p:property> \n ' + \
+            ' <p:property name="imageData"><![CDATA[' + size + ',' + self.b64 + ']]></p:property> \n ' \
             ' </p:metadata> \n ' \
-            ' </g>'
+            ' </g> \n '
 
     def extract_image(self, original_image):
 
@@ -65,7 +68,8 @@ class Image(Element):
         self.image = cropped_image
 
     def set_base64(self):
-        self.b64 = b64encode(self.image)
+        _, encoded_image = cv2.imencode('.png', self.image)
+        self.b64 = "data:image/png;base64," + b64encode(encoded_image).decode('ascii')
 
 
 class Icon(Element):
