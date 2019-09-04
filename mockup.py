@@ -1,5 +1,6 @@
 from zipfile import ZipFile
 from shortuuid import ShortUUID
+import os
 
 
 class Mockup:
@@ -39,7 +40,7 @@ class Mockup:
     def generate_pencil_file(self):
 
         path = "output/"
-        page_file = open(path + "page_" + self.generated_id + ".xml", "w+")
+        page_file = open("page_" + self.generated_id + ".xml", "w+")
         page_file.write(self.xml_page)
         page_file.close()
 
@@ -48,12 +49,15 @@ class Mockup:
             ' <Properties> \n <Property name="activeId">' + self.generated_id + '</Property> \n </Properties> \n ' \
             ' <Pages> \n <Page href="page_' + self.generated_id + '.xml"/> \n </Pages> \n' \
             ' </Document> \n'
-        content_file = open(path + "content.xml", "w+")
+        content_file = open("content.xml", "w+")
         content_file.write(content_file_xml)
         content_file.close()
 
         filename = self.title.strip()
 
         with ZipFile(path + filename + '.epz', 'w') as pencil_archive:
-            pencil_archive.write(path + 'content.xml')
-            pencil_archive.write(path + 'page_' + self.generated_id + '.xml')
+            pencil_archive.write('content.xml')
+            pencil_archive.write('page_' + self.generated_id + '.xml')
+
+        os.rename("content.xml", path + "content.xml")
+        os.rename("page_" + self.generated_id + ".xml", path + "page_" + self.generated_id + ".xml")
