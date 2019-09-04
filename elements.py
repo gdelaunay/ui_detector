@@ -1,6 +1,8 @@
 from base64 import b64encode
 from abc import ABC, abstractmethod
 from PIL import Image, ImageChops
+from shortuuid import ShortUUID
+from constants import icon_types, b64_icons
 import cv2
 import numpy
 
@@ -46,7 +48,7 @@ class ImageElement(Element):
 
     def redact_xml(self):
 
-        generated_id = "id"
+        generated_id = ShortUUID().random(length=12)
         first_point = str(int(self.xmin)) + "," + str(int(self.ymin))
         width = int(self.xmax - self.xmin)
         height = int(self.ymax - self.ymin)
@@ -81,7 +83,23 @@ class Icon(Element):
         self.ptype = ptype
 
     def redact_xml(self):
-        pass
+
+        generated_id = ShortUUID().random(length=12)
+        first_point = str(int(self.xmin)) + "," + str(int(self.ymin))
+        width = int(self.xmax - self.xmin)
+        height = int(self.ymax - self.ymin)
+        size = str(width) + "," + str(height)
+
+        base64 = b64_icons[icon_types.index(self.ptype)]
+
+        self.xml_element = \
+            ' <g xmlns="http://www.w3.org/2000/svg" p:type="Shape" p:def="Evolus.Common:Bitmap" id="' + generated_id + \
+            '" transform="matrix(1,0,0,1,' + first_point + ')"> \n ' \
+            ' <p:metadata> \n ' \
+            ' <p:property name="box"><![CDATA[' + size + ']]></p:property> \n ' + \
+            ' <p:property name="imageData"><![CDATA[' + size + ',' + base64 + ']]></p:property> \n ' \
+            ' </p:metadata> \n ' \
+            ' </g> \n '
 
 
 def remove_image_borders(image):
