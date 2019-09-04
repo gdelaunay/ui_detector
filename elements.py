@@ -2,7 +2,7 @@ from base64 import b64encode
 from abc import ABC, abstractmethod
 from PIL import Image, ImageChops
 from shortuuid import ShortUUID
-from constants import icon_types, b64_icons
+from constants import icon_types, b64_icons, text_types, t_firsts_tags, t_properties
 import cv2
 import numpy
 
@@ -30,10 +30,31 @@ class TextElement(Element):
         self.text_value = text_value
 
     def redact_xml(self):
-        pass
 
-    def compute_text_size(self):
-        pass
+        generated_id, first_point, size = get_element_properties(self)
+
+        first_tag = t_firsts_tags[text_types.index(self.ptype)]
+        properties_tag = t_properties[text_types.index(self.ptype)]
+        property_value = self.text_value if self.ptype is "text" else size
+
+        self.xml_element = \
+            first_tag + generated_id + '" transform="matrix(1,0,0,1,' + first_point + ')"> \n <p:metadata> \n ' + \
+            properties_tag + property_value + ']]></p:property> \n' \
+            '<p:property name="textContent"><![CDATA[' + self.text_value + ']]></p:property> \n' \
+            '<p:property name="textFont"><![CDATA[Arial|normal|normal|' + self.text_size + 'px|none]]></p:property> \n'\
+            '</p:metadata> \n <text p:name="text"></text> \n </g> \n'
+
+    def compute_text_size(self, original_image):
+
+        cropped_text = original_image[self.ymin:self.ymax, self.xmin:self.xmax]
+        borderless_text = remove_image_borders(cropped_text)
+
+        height = borderless_text.shape[0]
+
+        if self.ptype is not "text":
+            height *= .45
+
+        self.text_size = str(int(4.1 * height))
 
     def ocr_text_value(self, original_image):
         pass
@@ -48,11 +69,7 @@ class ImageElement(Element):
 
     def redact_xml(self):
 
-        generated_id = ShortUUID().random(length=12)
-        first_point = str(int(self.xmin)) + "," + str(int(self.ymin))
-        width = int(self.xmax - self.xmin)
-        height = int(self.ymax - self.ymin)
-        size = str(width) + "," + str(height)
+        generated_id, first_point, size = get_element_properties(self)
 
         self.xml_element = \
             ' <g xmlns="http://www.w3.org/2000/svg" p:type="Shape" p:def="Evolus.Common:Bitmap" id="' + generated_id + \
@@ -78,17 +95,13 @@ class ImageElement(Element):
 
 class Icon(Element):
 
-    def __init__(self, coordinates, ptype=None):
+    def __init__(self, coordinates, ptype):
         super().__init__(coordinates)
         self.ptype = ptype
 
     def redact_xml(self):
 
-        generated_id = ShortUUID().random(length=12)
-        first_point = str(int(self.xmin)) + "," + str(int(self.ymin))
-        width = int(self.xmax - self.xmin)
-        height = int(self.ymax - self.ymin)
-        size = str(width) + "," + str(height)
+        generated_id, first_point, size = get_element_properties(self)
 
         base64 = b64_icons[icon_types.index(self.ptype)]
 
@@ -100,6 +113,17 @@ class Icon(Element):
             ' <p:property name="imageData"><![CDATA[' + size + ',' + base64 + ']]></p:property> \n ' \
             ' </p:metadata> \n ' \
             ' </g> \n '
+
+
+def get_element_properties(element):
+
+    generated_id = ShortUUID().random(length=12)
+    first_point = str(int(element.xmin)) + "," + str(int(element.ymin))
+    width = int(element.xmax - element.xmin)
+    height = int(element.ymax - element.ymin)
+    size = str(width) + "," + str(height)
+
+    return generated_id, first_point, size
 
 
 def remove_image_borders(image):
