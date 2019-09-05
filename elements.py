@@ -1,3 +1,6 @@
+#! venv/ python3
+# coding: utf-8
+
 import cv2
 import numpy
 from base64 import b64encode
@@ -5,7 +8,7 @@ from abc import ABC, abstractmethod
 from PIL import Image, ImageChops
 from shortuuid import ShortUUID
 from constants import icon_types, b64_icons, text_types, t_firsts_tags, t_properties
-from ocr import ocr
+from ocr import ocr, padding
 
 
 class Element(ABC):
@@ -46,25 +49,30 @@ class TextElement(Element):
             '<p:property name="textFont"><![CDATA[Arial|normal|normal|' + self.text_size + 'px|none]]></p:property> \n'\
             '</p:metadata> \n <text p:name="text"></text> \n </g> \n'
 
-    def compute_text_size(self, original_image):
+    def compute_text_size_and_value(self, original_image):
         """
-        crop the element from the original image, remove its border, and calculate its size according to its type
+        crop the element from the original image, remove its border, calculate its size according to its type and OCR
+        its value
         :param original_image: original screenshot of the web UI
-        :return: text size in pixels
+        :set: text_size in pixels and text_value in string format
         """
 
         cropped_text = original_image[self.ymin:self.ymax, self.xmin:self.xmax]
+        pil_image = Image.fromarray(cropped_text)
+        padding_color = pil_image.getpixel((0, 0))
         borderless_text = remove_image_borders(cropped_text)
 
-        height = borderless_text.shape[0]
-
         if self.ptype is not "text":
-            height *= .45
+            cropped = borderless_text[3:-3, 3:-3]
+            pil_image = Image.fromarray(cropped)
+            padding_color = pil_image.getpixel((0, 0))
+            borderless_text = remove_image_borders(cropped)
 
-        self.text_size = str(int(4.1 * height))
+        text_image = padding(borderless_text, int(borderless_text.shape[0] / 6), padding_color)
 
-    def ocr_text_value(self, original_image):
-        pass
+        self.text_size = str(borderless_text.shape[0])
+
+        self.text_value = ocr(text_image)
 
 
 class ImageElement(Element):
@@ -90,7 +98,7 @@ class ImageElement(Element):
     def extract_image(self, original_image):
         """
         :param original_image: original screenshot of the web UI
-        :return: image element cropped from the original image
+        :set: image element cropped from the original image
         """
 
         cropped_image = original_image[self.ymin:self.ymax, self.xmin:self.xmax]
@@ -102,7 +110,7 @@ class ImageElement(Element):
     def set_base64(self):
         """
         convert an numpy array image to a base64 string
-        :return: base64 string image
+        :set: b64 string image
         """
         _, encoded_image = cv2.imencode('.png', self.image)
         self.b64 = "data:image/png;base64," + b64encode(encoded_image).decode('ascii')
