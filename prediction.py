@@ -6,7 +6,7 @@ import cv2
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
 
-IMAGE_PATH = "testing_data/test0.jpg"
+IMAGE_PATH = "testing_data/test1.jpg"
 MODEL_NAME = 'ui_detection_graph_1471.pb'
 
 # Number of different classes to detect
@@ -15,7 +15,7 @@ NUM_CLASSES = 19
 MIN_SCORE_TRESH = .1
 
 
-def main(_):
+def main():
 
     # Path to frozen detection graph. This is the actual model that is used for the object detection.
     path_to_ckpt = 'trained_graphs\\' + MODEL_NAME + '\\frozen_inference_graph.pb'
@@ -59,9 +59,7 @@ def main(_):
                 [boxes, scores, classes, num_detections],
                 feed_dict={image_tensor: image_np_expanded})
 
-            print(classes)
-
-            selected_boxes, selected_classes, selected_scores = delete_overlapping_boxes(sess, boxes, classes, scores)
+            selected_boxes, selected_classes, selected_scores = delete_overlapping_boxes_by_class(sess, boxes, classes, scores)
             # np.squeeze(boxes), np.squeeze(classes), np.squeeze(scores)
             # delete_overlapping_boxes(sess, boxes, classes, scores)
 
@@ -79,7 +77,9 @@ def main(_):
 
             display_output(image)
 
-            boxes_coordinates = get_pixelwise_boxes_coordinates(image, selected_boxes, selected_scores)
+            normalized_boxes = get_pixelwise_boxes_coordinates(image, selected_boxes)
+
+    return normalized_boxes, selected_classes, selected_scores
 
 
 def display_output(image):
@@ -93,25 +93,45 @@ def display_output(image):
     cv2.destroyAllWindows()
 
 
+def delete_overlapping_boxes_by_class(sess, boxes, classes, scores):
+    """ params: tf.session, raw object detection result and index of a class we want to select
+        returns: new arrays of boxes, classes and scores with boxes of the same class overlapping removed """
+
+    new_boxes, new_classes, new_scores = [], [], []
+
+    for i in range(1, NUM_CLASSES + 1):
+        selected_boxes, selected_classes, selected_scores = class_selection(sess, boxes, classes, scores, i)
+        if selected_boxes.shape[0] > 1:
+            selected_boxes, selected_classes, selected_scores = delete_overlapping_boxes(sess, selected_boxes,
+                                                                                         selected_classes,
+                                                                                         selected_scores)
+        for b in selected_boxes:
+            new_boxes.append(b)
+        new_classes = np.hstack((new_classes, selected_classes))
+        new_scores = np.hstack((new_scores, selected_scores))
+
+    return np.array(new_boxes), new_classes, new_scores
+
+
 def delete_overlapping_boxes(sess, boxes, classes, scores):
-    """ params: tf.session and raw object detection result
+    """ params: tf.session and "squeezed" object detection result
         returns: new arrays of boxes, classes and scores with boxes overlapping (depending on treshold) removed """
 
     max_output_size = 1000
-    overlapping_treshold = .2
+    overlapping_treshold = .1
 
     selected_indices = tf.image.non_max_suppression(
-        np.squeeze(boxes),
-        np.squeeze(scores),
+        boxes,
+        scores,
         max_output_size,
         iou_threshold=overlapping_treshold,
-        score_threshold=float('-inf'),
+        score_threshold=MIN_SCORE_TRESH,
         name=None
     )
 
     selected_indices = sess.run(selected_indices)
     selected_boxes = np.array(sess.run(tf.gather(np.squeeze(boxes), selected_indices)))
-    selected_classes = np.array(sess.run(tf.gather(np.squeeze(classes), selected_indices)))
+    selected_classes = np.array(sess.run(tf.gather(classes, selected_indices)))
     selected_scores = np.array(sess.run(tf.gather(np.squeeze(scores), selected_indices)))
 
     return selected_boxes, selected_classes, selected_scores
@@ -130,14 +150,14 @@ def class_selection(sess, boxes, classes, scores, class_index):
             new_classes.append(item.astype(np.int32))
             indices.append(i)
 
-    new_boxes = tf.gather(np.squeeze(boxes), indices)
-    new_scores = tf.gather(np.squeeze(scores), indices)
+    new_boxes = tf.gather(np.squeeze(boxes), np.array(indices).astype(np.int64))
+    new_scores = tf.gather(np.squeeze(scores), np.array(indices).astype(np.int64))
     new_boxes, new_scores = sess.run([new_boxes, new_scores])
 
-    return np.array(new_boxes), new_classes, np.array(new_scores)
+    return np.array(new_boxes), np.array(new_classes), np.array(new_scores)
 
 
-def get_pixelwise_boxes_coordinates(image, boxes, scores):
+def get_pixelwise_boxes_coordinates(image, boxes):
     """ params: original image and already processed (through overlapping removal = already squeezed) boxes and scores
         returns: an array of boxes, each box being an array containing their pixelwise (detection output coordinates are
                 normalized) position and score """
@@ -147,16 +167,14 @@ def get_pixelwise_boxes_coordinates(image, boxes, scores):
 
     boxes_coordinates = []
     for i, box in enumerate(boxes):
-        if scores[i] > MIN_SCORE_TRESH:
-            box[0] = box[0] * im_height
-            box[1] = box[1] * im_width
-            box[2] = box[2] * im_height
-            box[3] = box[3] * im_width
-            box = np.append(box, scores[i])
-            boxes_coordinates.append(box)
+        box[0] = box[0] * im_height
+        box[1] = box[1] * im_width
+        box[2] = box[2] * im_height
+        box[3] = box[3] * im_width
+        boxes_coordinates.append(box)
 
-    return boxes_coordinates
+    return np.array(boxes_coordinates)
 
 
 if __name__ == "__main__":
-    tf.app.run()
+    main()
