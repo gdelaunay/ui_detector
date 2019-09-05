@@ -3,6 +3,7 @@
 
 import pytesseract
 import cv2
+import numpy as np
 
 
 def ocr(text_image):
@@ -30,9 +31,14 @@ def preprocessing(text_image):
     _, binary = cv2.threshold(gray, 120, 255, cv2.THRESH_OTSU)
 
     # optimal character height for Tesseract ?
-    resized = resizing(binary, 60)
+    # resized = resizing(binary, 80)
 
-    return resized
+    count_white = np.sum(binary > 0)
+    count_black = np.sum(binary == 0)
+    if count_black > count_white:
+        binary = 255 - binary
+
+    return binary
 
 
 # resizing to a fixed height (keeping proportions) for OCR efficiency and preprocessing consistency
@@ -55,3 +61,11 @@ def padding(image, padding_size, padding_color):
     padded = cv2.copyMakeBorder(image, x, x, x, x, cv2.BORDER_CONSTANT, value=padding_color)
 
     return padded
+
+
+def find_main_color(image):
+    im2d = image.reshape(-1, image.shape[-1])
+    col_range = (256, 256, 256)  # generically : a2D.max(0)+1
+    im1d = np.ravel_multi_index(im2d.T, col_range)
+    b, g, r = np.unravel_index(np.bincount(im1d).argmax(), col_range)
+    return [b, g, r]

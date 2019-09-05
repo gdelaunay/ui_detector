@@ -58,21 +58,20 @@ class TextElement(Element):
         """
 
         cropped_text = original_image[self.ymin:self.ymax, self.xmin:self.xmax]
-        pil_image = Image.fromarray(cropped_text)
-        padding_color = pil_image.getpixel((0, 0))
-        borderless_text = remove_image_borders(cropped_text)
-
-        if self.ptype is not "text":
-            cropped = borderless_text[3:-3, 3:-3]
-            pil_image = Image.fromarray(cropped)
+        cv2.imshow("ln", cropped_text)
+        cv2.waitKey()
+        if self.ptype is "text":
+            pil_image = Image.fromarray(cropped_text)
             padding_color = pil_image.getpixel((0, 0))
-            borderless_text = remove_image_borders(cropped)
+            cropped_text = remove_image_borders(cropped_text)
+            cropped_text = padding(cropped_text, int(cropped_text.shape[0]/5), padding_color)
+        else:
+            x = int(cropped_text.shape[0]/5)
+            cropped_text = cropped_text[x:-x, x:-x]
 
-        text_image = padding(borderless_text, int(borderless_text.shape[0] / 6), padding_color)
+        self.text_size = str(int(0.6 * cropped_text.shape[0]))
 
-        self.text_size = str(borderless_text.shape[0])
-
-        self.text_value = ocr(text_image)
+        self.text_value = ocr(cropped_text)
 
 
 class ImageElement(Element):
