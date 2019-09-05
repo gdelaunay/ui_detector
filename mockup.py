@@ -1,5 +1,7 @@
 from zipfile import ZipFile
 from shortuuid import ShortUUID
+from elements import TextElement, ImageElement, Icon
+from constants import text_types, icon_types
 import os
 
 
@@ -9,13 +11,32 @@ class Mockup:
         self.title = title
         self.original_image = original_image
         self.boxes, self.classes, self.scores = detection_results
-        self.elements = elements
-        self.xml_page = xml_page
+        self.elements = elements if elements else []
+        self.xml_page = xml_page if xml_page else ""
         self.generated_id = ShortUUID().random(length=8)
 
     def translate_raw_results(self):
 
-        pass
+        classes = ["text", "text_input", "image", "rectangle_button", "oval_button", "search", "login", "lock", "chat",
+                   "phone", "checkbox", "home", "help", "down_arrow", "right_arrow", "menu", "plus", "mail", "settings"]
+
+        for i, box in enumerate(self.boxes):
+
+            box_class = classes[self.classes[i] - 1]
+
+            if box_class in text_types:
+                element = TextElement(box, box_class)
+                element.compute_text_size_and_value(self.original_image)
+            if box_class in icon_types:
+                element = Icon(box, box_class)
+            else:
+                element = ImageElement(box)
+                element.extract_image(self.original_image)
+                element.set_base64()
+
+            element.redact_xml()
+
+            self.elements.append(element)
 
     def create_xml_page(self):
 
