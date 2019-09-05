@@ -15,7 +15,7 @@ NUM_CLASSES = 19
 MIN_SCORE_TRESH = .1
 
 
-def main():
+def detection():
 
     # Path to frozen detection graph. This is the actual model that is used for the object detection.
     path_to_ckpt = 'trained_graphs\\' + MODEL_NAME + '\\frozen_inference_graph.pb'
@@ -177,4 +177,4 @@ def get_pixelwise_boxes_coordinates(image, boxes):
 
 
 if __name__ == "__main__":
-    main()
+    detection()
