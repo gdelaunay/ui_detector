@@ -1,10 +1,11 @@
+import cv2
+import numpy
 from base64 import b64encode
 from abc import ABC, abstractmethod
 from PIL import Image, ImageChops
 from shortuuid import ShortUUID
 from constants import icon_types, b64_icons, text_types, t_firsts_tags, t_properties
-import cv2
-import numpy
+from ocr import ocr
 
 
 class Element(ABC):
@@ -18,6 +19,7 @@ class Element(ABC):
 
     @abstractmethod
     def redact_xml(self):
+        """ translate the Element object into xml pencil format """
         pass
 
 
@@ -45,6 +47,11 @@ class TextElement(Element):
             '</p:metadata> \n <text p:name="text"></text> \n </g> \n'
 
     def compute_text_size(self, original_image):
+        """
+        crop the element from the original image, remove its border, and calculate its size according to its type
+        :param original_image: original screenshot of the web UI
+        :return: text size in pixels
+        """
 
         cropped_text = original_image[self.ymin:self.ymax, self.xmin:self.xmax]
         borderless_text = remove_image_borders(cropped_text)
@@ -81,6 +88,10 @@ class ImageElement(Element):
             ' </g> \n '
 
     def extract_image(self, original_image):
+        """
+        :param original_image: original screenshot of the web UI
+        :return: image element cropped from the original image
+        """
 
         cropped_image = original_image[self.ymin:self.ymax, self.xmin:self.xmax]
 
@@ -89,6 +100,10 @@ class ImageElement(Element):
         self.image = borderless_image
 
     def set_base64(self):
+        """
+        convert an numpy array image to a base64 string
+        :return: base64 string image
+        """
         _, encoded_image = cv2.imencode('.png', self.image)
         self.b64 = "data:image/png;base64," + b64encode(encoded_image).decode('ascii')
 
@@ -116,6 +131,11 @@ class Icon(Element):
 
 
 def get_element_properties(element):
+    """
+    compute an element's properties needed to write it in xml file
+    :param element: any Element object
+    :return: its uuid, first (xmin, ymin) point, and its size "width, height" in string format
+    """
 
     generated_id = ShortUUID().random(length=12)
     first_point = str(int(element.xmin)) + "," + str(int(element.ymin))
@@ -127,6 +147,12 @@ def get_element_properties(element):
 
 
 def remove_image_borders(image):
+    """
+    find if an image has border (from approximate object detections result) by looking at first pixel color, and if so
+    remove them
+    :param image: any
+    :return: same image without borders (if it had any)
+    """
 
     rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     pil_image = Image.fromarray(rgb_image)
