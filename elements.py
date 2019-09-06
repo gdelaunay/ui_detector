@@ -68,7 +68,9 @@ class TextElement(Element):
             x = int(cropped_text.shape[0]/5)
             cropped_text = cropped_text[x:-x, x:-x]
 
-        self.text_size = str(int(0.6 * cropped_text.shape[0]))
+        nb_of_lines = find_text_nb_of_lines(cropped_text)
+
+        self.text_size = str(int(0.6 * cropped_text.shape[0] / nb_of_lines))
 
         self.text_value = ocr(cropped_text)
 
@@ -173,3 +175,18 @@ def remove_image_borders(image):
 
     return cv2_image
 
+
+def find_text_nb_of_lines(text_image):
+    """
+    :param text_image: any BGR image of text (aligned = not rotated)
+    :return: number of lines found in text_image
+    """
+
+    gray = cv2.cvtColor(text_image, cv2.COLOR_BGR2GRAY)
+    _, binary = cv2.threshold(gray, 120, 255, cv2.THRESH_OTSU)
+    hist = cv2.reduce(binary, 1, cv2.REDUCE_AVG).reshape(-1)
+
+    h = text_image.shape[0]
+    lines = [y for y in range(h - 1) if hist[y + 1] <= 2 < hist[y]]
+
+    return len(lines) if len(lines) > 0 else 1
