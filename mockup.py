@@ -22,14 +22,16 @@ class Mockup:
 
         for i, box in enumerate(self.boxes):
 
-            box_class = classes[self.classes[i] - 1]
+            box_class = classes[int(self.classes[i] - 1)]
 
             if box_class in text_types:
                 element = TextElement(box, box_class)
                 element.compute_text_size_and_value(self.original_image)
+
             if box_class in icon_types:
                 element = Icon(box, box_class)
-            else:
+
+            if box_class is "image" or box_class is "checkbox":
                 element = ImageElement(box)
                 element.extract_image(self.original_image)
                 element.set_base64()
@@ -40,7 +42,7 @@ class Mockup:
 
     def create_xml_page(self):
 
-        height, width = self.original_image.shape[1::-1]
+        height, width = self.original_image.shape[:2]
 
         xml_header = ' <p:Page xmlns:p="http://www.evolus.vn/Namespace/Pencil"> \n ' \
                      ' <p:Properties> \n ' \

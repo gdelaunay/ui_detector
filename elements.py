@@ -14,10 +14,10 @@ from ocr import ocr, padding
 class Element(ABC):
 
     def __init__(self, coordinates, xml_element=None):
-        self.ymin = coordinates[0]
-        self.xmin = coordinates[1]
-        self.ymax = coordinates[2]
-        self.xmax = coordinates[3]
+        self.ymin = int(coordinates[0])
+        self.xmin = int(coordinates[1])
+        self.ymax = int(coordinates[2])
+        self.xmax = int(coordinates[3])
         self.xml_element = xml_element
 
     @abstractmethod
@@ -58,8 +58,7 @@ class TextElement(Element):
         """
 
         cropped_text = original_image[self.ymin:self.ymax, self.xmin:self.xmax]
-        cv2.imshow("ln", cropped_text)
-        cv2.waitKey()
+
         if self.ptype is "text":
             pil_image = Image.fromarray(cropped_text)
             padding_color = pil_image.getpixel((0, 0))
