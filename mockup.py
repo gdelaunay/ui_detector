@@ -62,7 +62,7 @@ class Mockup:
 
     def generate_pencil_file(self):
 
-        path = "output/mockup_" + self.generated_id + "/"
+        path = "output/mockup_" + self.title + "_" + self.generated_id + "/"
         os.makedirs(path)
 
         page_file = open("page_" + self.generated_id + ".xml", "w+")

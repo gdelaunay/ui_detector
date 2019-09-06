@@ -2,7 +2,7 @@
 # coding: utf-8
 
 import cv2
-import numpy
+import numpy as np
 from base64 import b64encode
 from abc import ABC, abstractmethod
 from PIL import Image, ImageChops
@@ -64,13 +64,15 @@ class TextElement(Element):
             padding_color = pil_image.getpixel((0, 0))
             cropped_text = remove_image_borders(cropped_text)
             cropped_text = padding(cropped_text, int(cropped_text.shape[0]/5), padding_color)
+            text_height = 0.8 * cropped_text.shape[0]
         else:
-            x = int(cropped_text.shape[0]/5)
+            x = int(cropped_text.shape[0]/4)
             cropped_text = cropped_text[x:-x, x:-x]
+            text_height = 0.55 * cropped_text.shape[0]
 
         nb_of_lines = find_text_nb_of_lines(cropped_text)
 
-        self.text_size = str(int(0.6 * cropped_text.shape[0] / nb_of_lines))
+        self.text_size = str(int(text_height / nb_of_lines))
 
         self.text_value = ocr(cropped_text)
 
@@ -171,7 +173,7 @@ def remove_image_borders(image):
     if bbox:
         pil_image = pil_image.crop(bbox)
 
-    cv2_image = cv2.cvtColor(numpy.array(pil_image), cv2.COLOR_RGB2BGR)
+    cv2_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
 
     return cv2_image
 
@@ -184,9 +186,17 @@ def find_text_nb_of_lines(text_image):
 
     gray = cv2.cvtColor(text_image, cv2.COLOR_BGR2GRAY)
     _, binary = cv2.threshold(gray, 120, 255, cv2.THRESH_OTSU)
+
+    count_white = np.sum(binary > 0)
+    count_black = np.sum(binary == 0)
+    if count_black < count_white:
+        binary = 255 - binary
+
     hist = cv2.reduce(binary, 1, cv2.REDUCE_AVG).reshape(-1)
 
-    h = text_image.shape[0]
+    h, w = text_image.shape[:2]
     lines = [y for y in range(h - 1) if hist[y + 1] <= 2 < hist[y]]
+    for y in lines:
+        cv2.line(binary, (0, y), (w, y), (0, 255, 0), 1)
 
     return len(lines) if len(lines) > 0 else 1
