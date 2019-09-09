@@ -2,6 +2,8 @@ from zipfile import ZipFile
 from shortuuid import ShortUUID
 from elements import TextElement, ImageElement, Icon
 from constants import text_types, icon_types
+from skimage.color import rgb2lab, deltaE_cie76
+from colormap.colors import hex2rgb
 import os
 
 
@@ -27,6 +29,8 @@ class Mockup:
             if box_class in text_types:
                 element = TextElement(box, box_class)
                 element.compute_text_properties(self.original_image)
+                if element.text_value.strip() == "":
+                    continue
 
             if box_class in icon_types:
                 element = Icon(box, box_class)
@@ -88,17 +92,32 @@ class Mockup:
 
     def align_text_elements(self):
 
-        for element in (x for x in self.elements if isinstance(x, TextElement)):
-            for next_element in (x for x in self.elements if isinstance(x, TextElement)):
-                if element.ptype == next_element.ptype:
-                    h = (element.ymax - element.ymin) * .5
+        for el in (x for x in self.elements if isinstance(x, TextElement)):
+            for next_el in (x for x in self.elements if isinstance(x, TextElement)):
+                if el.ptype == next_el.ptype:
+                    h = (el.ymax - el.ymin) * .5
 
-                    if element.ymin - h < next_element.ymin < element.ymin + h:
-                        next_element.ymin = element.ymin
-                        if next_element.xmin - element.xmax < 100:
-                            next_element.text_size = element.text_size
+                    if el.ymin - h < next_el.ymin < el.ymin + h:
+                        next_el.ymin = el.ymin
 
-                    if element.xmin - h < next_element.xmin < element.xmin + h:
-                        next_element.xmin = element.xmin
+                        if (next_el.xmin - el.xmax < 100) & \
+                                (.5 * int(el.text_size) < int(next_el.text_size) < 2 * int(el.text_size)):
+                            next_el.text_size = el.text_size
+
+                        el.color, next_el.color = compare_colors(el.color, next_el.color)
+
+                    if el.xmin - h < next_el.xmin < el.xmin + h:
+                        next_el.xmin = el.xmin
 
 
+def compare_colors(c1, c2):
+
+    c1s, c2s = (c1[1], c2[1]) if len(c1) == 2 else (c1, c2)
+
+    r1, g1, b1 = hex2rgb(c1s, normalise=False)
+    lab1 = rgb2lab([[[r1, g1, b1]]])
+    r2, g2, b2 = hex2rgb(c2s, normalise=False)
+    lab2 = rgb2lab([[[r2, g2, b2]]])
+    diff = (deltaE_cie76(lab1, lab2) * 1e5)[0][0]
+
+    return (c1, c1) if diff < .5 else (c1, c2)
