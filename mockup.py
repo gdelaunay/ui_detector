@@ -36,8 +36,6 @@ class Mockup:
                 element.extract_image(self.original_image)
                 element.set_base64()
 
-            element.redact_xml()
-
             self.elements.append(element)
 
     def create_xml_page(self):
@@ -55,6 +53,7 @@ class Mockup:
 
         xml_content = ' <p:Content> \n '
         for element in self.elements:
+            element.redact_xml()
             xml_content += element.xml_element
         xml_content += ' </p:Content> \n '
 
@@ -86,3 +85,20 @@ class Mockup:
 
         os.rename("content.xml", path + "content.xml")
         os.rename("page_" + self.generated_id + ".xml", path + "page_" + self.generated_id + ".xml")
+
+    def align_text_elements(self):
+
+        for element in (x for x in self.elements if isinstance(x, TextElement)):
+            for next_element in (x for x in self.elements if isinstance(x, TextElement)):
+                if element.ptype == next_element.ptype:
+                    h = (element.ymax - element.ymin) * .5
+
+                    if element.ymin - h < next_element.ymin < element.ymin + h:
+                        next_element.ymin = element.ymin
+                        if next_element.xmin - element.xmax < 100:
+                            next_element.text_size = element.text_size
+
+                    if element.xmin - h < next_element.xmin < element.xmin + h:
+                        next_element.xmin = element.xmin
+
+
