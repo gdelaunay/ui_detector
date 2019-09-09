@@ -26,9 +26,9 @@ oval_button_first_tag = '<g xmlns="http://www.w3.org/2000/svg" p:type="Shape" p:
 
 t_firsts_tags = [text_first_tag, text_input_first_tag, rectangle_button_first_tag, oval_button_first_tag]
 
-text_properties = ['<p:property name="label"><![CDATA[','<p:property name="fillColor"><![CDATA[', '<p:property name="textColor"><![CDATA[']
-text_input_properties = ['<p:property name="box"><![CDATA[', '<p:property name="fillColor"><![CDATA[',  '<p:property name="textColor"><![CDATA[']
-rectangle_button_properties = ['<p:property name="box"><![CDATA[', '<p:property name="fillColor"><![CDATA[',  '<p:property name="textColor"><![CDATA[']
-oval_button_properties = ['<p:property name="box"><![CDATA[', '<p:property name="fillColor"><![CDATA[',  '<p:property name="textColor"><![CDATA[']
+text_properties = ['<p:property name="label"><![CDATA[']
+text_input_properties = ['<p:property name="box"><![CDATA[']
+rectangle_button_properties = ['<p:property name="box"><![CDATA[']
+oval_button_properties = ['<p:property name="box"><![CDATA[']
 
 t_properties = [text_properties, text_input_properties, rectangle_button_properties, oval_button_properties]

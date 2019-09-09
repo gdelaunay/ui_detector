@@ -43,19 +43,18 @@ class TextElement(Element):
         first_tag = t_firsts_tags[text_types.index(self.ptype)]
         properties_tag = t_properties[text_types.index(self.ptype)]
         property_value = self.text_value if self.ptype is "text" else size
-        text_color = self.color
-
-        if self.ptype is not "text":
-            text_color = self.color[1]
-            self.color = self.color[0]
+        text_color = self.color if self.ptype is "text" else self.color[1]
+        self.color = self.color if self.ptype is "text" else self.color[0]
+        stroke_style = "1" if self.ptype is "text_input" else "0"
 
         self.xml_element = \
             first_tag + generated_id + '" transform="matrix(1,0,0,1,' + first_point + ')"> \n <p:metadata> \n ' + \
-            properties_tag[0] + property_value + ']]></p:property> \n' +\
-            properties_tag[1] + self.color + ']]></p:property> \n' +\
-            properties_tag[2] + text_color + ']]></p:property> \n' \
+            properties_tag[0] + property_value + ']]></p:property> \n' \
+            '<p:property name="fillColor"><![CDATA[' + self.color + ']]></p:property> \n' \
+            '<p:property name="textColor"><![CDATA[' + text_color + ']]></p:property> \n' \
             '<p:property name="textContent"><![CDATA[' + self.text_value + ']]></p:property> \n' \
             '<p:property name="textFont"><![CDATA[Arial|normal|normal|' + self.text_size + 'px|none]]></p:property> \n'\
+            '<p:property name="strokeStyle"><![CDATA[' + stroke_style + '|]]></p:property> \n' \
             '</p:metadata> \n <text p:name="text"></text> \n </g> \n'
 
     def compute_text_properties(self, original_image):
