@@ -26,7 +26,7 @@ class Mockup:
 
             if box_class in text_types:
                 element = TextElement(box, box_class)
-                element.compute_text_size_and_value(self.original_image)
+                element.compute_text_properties(self.original_image)
 
             if box_class in icon_types:
                 element = Icon(box, box_class)

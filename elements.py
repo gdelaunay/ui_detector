@@ -3,12 +3,13 @@
 
 import cv2
 import numpy as np
+from colorsys import rgb_to_hsv
 from base64 import b64encode
 from abc import ABC, abstractmethod
 from PIL import Image, ImageChops
 from shortuuid import ShortUUID
 from constants import icon_types, b64_icons, text_types, t_firsts_tags, t_properties
-from ocr import ocr, padding
+from ocr import ocr, padding, preprocessing
 
 
 class Element(ABC):
@@ -28,11 +29,12 @@ class Element(ABC):
 
 class TextElement(Element):
 
-    def __init__(self, coordinates, ptype, text_size=None, text_value=None):
+    def __init__(self, coordinates, ptype, text_size=None, text_value=None, color=None):
         super().__init__(coordinates)
         self.ptype = ptype
         self.text_size = text_size
         self.text_value = text_value
+        self.color = color
 
     def redact_xml(self):
 
@@ -41,15 +43,22 @@ class TextElement(Element):
         first_tag = t_firsts_tags[text_types.index(self.ptype)]
         properties_tag = t_properties[text_types.index(self.ptype)]
         property_value = self.text_value if self.ptype is "text" else size
+        text_color = self.color
+
+        if self.ptype is not "text":
+            text_color = self.color[1]
+            self.color = self.color[0]
 
         self.xml_element = \
             first_tag + generated_id + '" transform="matrix(1,0,0,1,' + first_point + ')"> \n <p:metadata> \n ' + \
-            properties_tag + property_value + ']]></p:property> \n' \
+            properties_tag[0] + property_value + ']]></p:property> \n' +\
+            properties_tag[1] + self.color + ']]></p:property> \n' +\
+            properties_tag[2] + text_color + ']]></p:property> \n' \
             '<p:property name="textContent"><![CDATA[' + self.text_value + ']]></p:property> \n' \
             '<p:property name="textFont"><![CDATA[Arial|normal|normal|' + self.text_size + 'px|none]]></p:property> \n'\
             '</p:metadata> \n <text p:name="text"></text> \n </g> \n'
 
-    def compute_text_size_and_value(self, original_image):
+    def compute_text_properties(self, original_image):
         """
         crop the element from the original image, remove its border, calculate its size according to its type and OCR
         its value
@@ -65,10 +74,16 @@ class TextElement(Element):
             cropped_text = remove_image_borders(cropped_text)
             cropped_text = padding(cropped_text, int(cropped_text.shape[0]/5), padding_color)
             text_height = 0.8 * cropped_text.shape[0]
+            self.color = find_text_color(cropped_text)
         else:
             x = int(cropped_text.shape[0]/4)
             cropped_text = cropped_text[x:-x, x:-x]
             text_height = 0.55 * cropped_text.shape[0]
+            pil_image = Image.fromarray(cropped_text)
+            bgr = pil_image.getpixel((0, int(cropped_text.shape[0]/2)))
+            button_color = '#%02x%02x%02x' % (bgr[2], bgr[1], bgr[0])
+            text_color = find_text_color(cropped_text)
+            self.color = [button_color, text_color]
 
         nb_of_lines = find_text_nb_of_lines(cropped_text)
 
@@ -200,3 +215,11 @@ def find_text_nb_of_lines(text_image):
         cv2.line(binary, (0, y), (w, y), (0, 255, 0), 1)
 
     return len(lines) if len(lines) > 0 else 1
+
+
+def find_text_color(cropped_text):
+    binary = preprocessing(cropped_text)
+    black_pixels = np.argwhere(binary == 0)
+    bgr = cropped_text[black_pixels[0][0]][black_pixels[0][1]]
+    return '#%02x%02x%02x' % (bgr[2], bgr[1], bgr[0])
+
