@@ -65,8 +65,8 @@ class Mockup:
         path = "output/mockup_" + self.title + "_" + self.generated_id + "/"
         os.makedirs(path)
 
-        page_file = open("page_" + self.generated_id + ".xml", "w+")
-        page_file.write(self.xml_page)
+        page_file = open("page_" + self.generated_id + ".xml", "wb")
+        page_file.write(self.xml_page.encode("utf-8"))
         page_file.close()
 
         content_file_xml = \
@@ -74,7 +74,7 @@ class Mockup:
             ' <Properties> \n <Property name="activeId">' + self.generated_id + '</Property> \n </Properties> \n ' \
             ' <Pages> \n <Page href="page_' + self.generated_id + '.xml"/> \n </Pages> \n' \
             ' </Document> \n'
-        content_file = open("content.xml", "w+")
+        content_file = open("content.xml", "wt")
         content_file.write(content_file_xml)
         content_file.close()
 
