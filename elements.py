@@ -3,7 +3,6 @@
 
 import cv2
 import numpy as np
-from colorsys import rgb_to_hsv
 from base64 import b64encode
 from abc import ABC, abstractmethod
 from PIL import Image, ImageChops
@@ -79,7 +78,7 @@ class TextElement(Element):
             cropped_text = cropped_text[x:-x, x:-x]
             text_height = 0.55 * cropped_text.shape[0]
             pil_image = Image.fromarray(cropped_text)
-            bgr = pil_image.getpixel((0, int(cropped_text.shape[0]/2)))
+            bgr = pil_image.getpixel((10, int(cropped_text.shape[0]/2)))
             button_color = '#%02x%02x%02x' % (bgr[2], bgr[1], bgr[0])
             text_color = find_text_color(cropped_text)
             self.color = [button_color, text_color]
