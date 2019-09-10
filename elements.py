@@ -39,11 +39,18 @@ class TextElement(Element):
 
         generated_id, first_point, size = get_element_properties(self)
 
-        first_tag = t_firsts_tags[text_types.index(self.ptype)]
-        properties_tag = t_properties[text_types.index(self.ptype)]
-        property_value = self.text_value if self.ptype is "text" else size
-        text_color = self.color if self.ptype is "text" else self.color[1]
-        self.color = self.color if self.ptype is "text" else self.color[0]
+        type_index = text_types.index(self.ptype)
+        first_tag = t_firsts_tags[type_index]
+        properties_tag = t_properties[type_index]
+
+        if self.ptype is "text":
+            property_value = self.text_value
+            text_color = self.color
+        else:
+            property_value = size
+            text_color = self.color[1]
+            self.color = self.color[0]
+
         stroke_style = "1" if self.ptype is "text_input" else "0"
 
         self.xml_element = \
@@ -58,8 +65,8 @@ class TextElement(Element):
 
     def compute_text_properties(self, original_image):
         """
-        crop the element from the original image, remove its border, calculate its size according to its type and OCR
-        its value
+        crop the element from the original image, remove its border, calculate its size according to its type, OCR
+        its value, find text color and button color
         :param original_image: original screenshot of the web UI
         :set: text_size in pixels and text_value in string format
         """
@@ -78,8 +85,8 @@ class TextElement(Element):
             cropped_text = cropped_text[x:-x, x:-x]
             text_height = 0.55 * cropped_text.shape[0]
             pil_image = Image.fromarray(cropped_text)
-            bgr = pil_image.getpixel((10, int(cropped_text.shape[0]/2)))
-            button_color = '#%02x%02x%02x' % (bgr[2], bgr[1], bgr[0])
+            bgr = pil_image.getpixel((8, int(cropped_text.shape[0]/2)))
+            button_color = bgr_to_hex(bgr)
             text_color = find_text_color(cropped_text)
             self.color = [button_color, text_color]
 
@@ -197,27 +204,39 @@ def find_text_nb_of_lines(text_image):
     :return: number of lines found in text_image
     """
 
-    gray = cv2.cvtColor(text_image, cv2.COLOR_BGR2GRAY)
-    _, binary = cv2.threshold(gray, 120, 255, cv2.THRESH_OTSU)
-
-    count_white = np.sum(binary > 0)
-    count_black = np.sum(binary == 0)
-    if count_black < count_white:
-        binary = 255 - binary
+    binary = 255 - preprocessing(text_image)
 
     hist = cv2.reduce(binary, 1, cv2.REDUCE_AVG).reshape(-1)
 
-    h, w = text_image.shape[:2]
+    h = text_image.shape[0]
+
     lines = [y for y in range(h - 1) if hist[y + 1] <= 2 < hist[y]]
-    for y in lines:
-        cv2.line(binary, (0, y), (w, y), (0, 255, 0), 1)
 
     return len(lines) if len(lines) > 0 else 1
 
 
 def find_text_color(cropped_text):
+    """
+    compute text color by converting image to binary (OTSU treshold), take first black pixel (= first
+    and find its color value in the original text image
+    :param cropped_text: numpy image of a text element already cropped
+    :return: text color in hex string format
+    """
+
     binary = preprocessing(cropped_text)
     black_pixels = np.argwhere(binary == 0)
-    bgr = cropped_text[black_pixels[0][0]][black_pixels[0][1]]
-    return '#%02x%02x%02x' % (bgr[2], bgr[1], bgr[0])
 
+    try:
+        bgr = cropped_text[black_pixels[1][0]][black_pixels[1][1]]
+    except IndexError:
+        bgr = cropped_text[black_pixels[0][0]][black_pixels[0][1]]
+
+    return bgr_to_hex(bgr)
+
+
+def bgr_to_hex(bgr):
+    """
+    :param bgr: bgr color in the form of an array [.., .., ..]
+    :return: hex color in string format
+    """
+    return '#%02x%02x%02x' % (bgr[2], bgr[1], bgr[0])
