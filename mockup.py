@@ -4,6 +4,8 @@ from elements import TextElement, ImageElement, Icon
 from constants import text_types, icon_types
 from skimage.color import rgb2lab, deltaE_cie76
 from colormap.colors import hex2rgb
+from PIL import Image
+import cv2
 import os
 
 
@@ -12,6 +14,7 @@ class Mockup:
     def __init__(self, title, original_image, detection_results, elements=None, xml_page=None):
         self.title = title
         self.original_image = original_image
+        self.background_image = original_image.copy()
         self.boxes, self.classes, self.scores = detection_results
         self.elements = elements if elements else []
         self.xml_page = xml_page if xml_page else ""
@@ -40,7 +43,11 @@ class Mockup:
                 element.extract_image(self.original_image)
                 element.set_base64()
 
+            self.extract_from_background(element)
+
             self.elements.append(element)
+
+        self.elements.sort(key=lambda x: x.xmax)
 
     def create_xml_page(self):
 
@@ -55,10 +62,23 @@ class Mockup:
                      ' <p:Property name="pageFileName">page_' + self.generated_id + '.xml</p:Property> \n ' \
                      ' </p:Properties> \n '
 
+        background_element = ImageElement([0, 0, height, width], self.background_image)
+        background_element.set_base64()
+        background_element.redact_xml(backgroung=True)
+
         xml_content = ' <p:Content> \n '
+        xml_content += background_element.xml_element
+
         for element in self.elements:
-            element.redact_xml()
-            xml_content += element.xml_element
+            if isinstance(element, ImageElement):
+                element.redact_xml()
+                xml_content += element.xml_element
+
+        for element in self.elements:
+            if not isinstance(element, ImageElement):
+                element.redact_xml()
+                xml_content += element.xml_element
+
         xml_content += ' </p:Content> \n '
 
         self.xml_page = xml_header + xml_content + ' </p:Page> '
@@ -93,24 +113,51 @@ class Mockup:
     def align_text_elements(self):
 
         for el in (x for x in self.elements if isinstance(x, TextElement)):
+
             for next_el in (x for x in self.elements if isinstance(x, TextElement)):
+
                 if el.ptype == next_el.ptype:
-                    h = (el.ymax - el.ymin) * .5
 
-                    if el.ymin - h < next_el.ymin < el.ymin + h:
+                    h = (el.ymax - el.ymin) * .33
+
+                    if (next_el.xmin - el.xmax < 100) & \
+                            (.5 * int(el.text_size) < int(next_el.text_size) < 1.5 * int(el.text_size)) & \
+                            (el.ymin - h < next_el.ymin < el.ymin + 2 * h):
+
+                        next_el.text_size = el.text_size
                         next_el.ymin = el.ymin
-
-                        if (next_el.xmin - el.xmax < 100) & \
-                                (.5 * int(el.text_size) < int(next_el.text_size) < 2 * int(el.text_size)):
-                            next_el.text_size = el.text_size
+                        next_el.ymax = el.ymax
 
                         el.color, next_el.color = compare_colors(el.color, next_el.color)
 
                     if el.xmin - h < next_el.xmin < el.xmin + h:
                         next_el.xmin = el.xmin
 
+    def extract_from_background(self, element):
+
+        pil_image = Image.fromarray(self.background_image)
+        filling_color = pil_image.getpixel((element.xmin, element.ymin))
+        w, h = ((element.xmax - element.xmin), (element.ymax - element.ymin))
+
+        if isinstance(element, ImageElement):
+            pt1 = (element.xmin, element.ymin)
+            pt2 = (element.xmax, element.ymax)
+        else:
+            xmin = int(element.xmin - 0.15 * w) if (element.xmin - 0.15 * w) > 0 else 0
+            ymin = int(element.ymin - 0.15 * h) if (element.ymin - 0.15 * h) > 0 else 0
+            pt1 = (xmin, ymin)
+            pt2 = (int(element.xmax + 0.15 * w), int(element.ymax + 0.15 * h))
+
+        cv2.rectangle(self.background_image, pt1, pt2, filling_color, cv2.FILLED)
+
 
 def compare_colors(c1, c2):
+    """
+
+    :param c1: color attribute of a text element (either text_color or [button_color, text_color) in hex string format
+    :param c2: same
+    :return: new c1 & c2 values, both the same if they were similar enough
+    """
 
     c1s, c2s = (c1[1], c2[1]) if len(c1) == 2 else (c1, c2)
 
@@ -120,4 +167,4 @@ def compare_colors(c1, c2):
     lab2 = rgb2lab([[[r2, g2, b2]]])
     diff = (deltaE_cie76(lab1, lab2) * 1e5)[0][0]
 
-    return (c1, c1) if diff < .5 else (c1, c2)
+    return (c1, c1) if diff < .4 else (c1, c2)

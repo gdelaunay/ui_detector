@@ -104,14 +104,20 @@ class ImageElement(Element):
         self.image = image
         self.b64 = b64
 
-    def redact_xml(self):
+    def redact_xml(self, **background):
 
         generated_id, first_point, size = get_element_properties(self)
 
         self.xml_element = \
             ' <g xmlns="http://www.w3.org/2000/svg" p:type="Shape" p:def="Evolus.Common:Bitmap" id="' + generated_id + \
-            '" transform="matrix(1,0,0,1,' + first_point + ')"> \n ' \
-            ' <p:metadata> \n ' \
+            '" transform="matrix(1,0,0,1,' + first_point
+
+        if background:
+            self.xml_element += ')" ' + 'p:locked="true"> \n '
+        else:
+            self.xml_element += ')"> \n '
+
+        self.xml_element += ' <p:metadata> \n ' \
             ' <p:property name="box"><![CDATA[' + size + ']]></p:property> \n ' + \
             ' <p:property name="imageData"><![CDATA[' + size + ',' + self.b64 + ']]></p:property> \n ' \
             ' </p:metadata> \n ' \
