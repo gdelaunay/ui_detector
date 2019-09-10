@@ -122,7 +122,7 @@ class Mockup:
 
                     if (next_el.xmin - el.xmax < 100) & \
                             (.5 * int(el.text_size) < int(next_el.text_size) < 1.5 * int(el.text_size)) & \
-                            (el.ymin - h < next_el.ymin < el.ymin + 2 * h):
+                            (el.ymin - h < next_el.ymin < el.ymin + 1.5 * h):
 
                         next_el.text_size = el.text_size
                         next_el.ymin = el.ymin
@@ -131,7 +131,11 @@ class Mockup:
                         el.color, next_el.color = compare_colors(el.color, next_el.color)
 
                     if el.xmin - h < next_el.xmin < el.xmin + h:
+
                         next_el.xmin = el.xmin
+
+                        if .9 * int(el.text_size) < int(next_el.text_size) < 1.1 * int(el.text_size):
+                            next_el.text_size = el.text_size
 
     def extract_from_background(self, element):
 
@@ -143,10 +147,12 @@ class Mockup:
             pt1 = (element.xmin, element.ymin)
             pt2 = (element.xmax, element.ymax)
         else:
-            xmin = int(element.xmin - 0.15 * w) if (element.xmin - 0.15 * w) > 0 else 0
-            ymin = int(element.ymin - 0.15 * h) if (element.ymin - 0.15 * h) > 0 else 0
+            dx = 0.03
+            dy = 0.05
+            xmin = int(element.xmin - dx * w) if (element.xmin - dx * w) > 0 else 0
+            ymin = int(element.ymin - dy * h) if (element.ymin - dy * h) > 0 else 0
             pt1 = (xmin, ymin)
-            pt2 = (int(element.xmax + 0.15 * w), int(element.ymax + 0.15 * h))
+            pt2 = (int(element.xmax + dx * w), int(element.ymax + dy * h))
 
         cv2.rectangle(self.background_image, pt1, pt2, filling_color, cv2.FILLED)
 
