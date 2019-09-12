@@ -3,15 +3,46 @@ import numpy as np
 from PIL import Image, ImageChops
 from ocr import preprocessing
 from skimage.color import rgb2lab, deltaE_cie76
-from colormap.colors import hex2rgb
+from colormap.colors import hex2rgb, rgb2hsv, hsv2rgb
 
 
-def compare_colors(c1, c2, diff):
+def differentiate_colors(c1, c2, diff):
+    """
+    :param c1: color in hex string format
+    :param c2: same
+    :param diff: arbitrary treshold for similarity value
+    :return: new c1 & c2 values, differentiated if they were too similar
     """
 
+    r1, g1, b1 = hex2rgb(c1, normalise=False)
+    lab1 = rgb2lab([[[r1, g1, b1]]])
+    r2, g2, b2 = hex2rgb(c2, normalise=False)
+    lab2 = rgb2lab([[[r2, g2, b2]]])
+    cdiff = (deltaE_cie76(lab1, lab2) * 1e5)[0][0]
+
+    if cdiff < diff:
+        h1, s1, v1 = rgb2hsv(r1, g1, b1, normalised=False)
+        h2, s2, v2 = rgb2hsv(r2, g2, b2, normalised=False)
+
+        if v1 <= v2:
+            v1 = .75 * v1
+            v2 = 1.25 * v2 if 1.25 * v2 <= 1 else 1
+        else:
+            v2 = .75 * v2
+            v1 = 1.25 * v1 if 1.25 * v1 <= 1 else 1
+
+        r1, g1, b1 = hsv2rgb(h1, s1, v1, normalised=True)
+        r2, g2, b2 = hsv2rgb(h2, s2, v2, normalised=True)
+        c1, c2 = (rgb2hex([int(r1*255), int(g1*255), int(b1*255)]), rgb2hex([int(r2*255), int(g2*255), int(b2*255)]))
+
+    return c1, c2
+
+
+def liken_colors(c1, c2, diff):
+    """
     :param c1: color attribute of a text element (either text_color or [button_color, text_color] in hex string format
     :param c2: same
-    :param diff: arbitratry treshold for similarity value
+    :param diff: arbitrary treshold for similarity value
     :return: new c1 & c2 values, both the same if they were similar enough
     """
 
@@ -86,7 +117,7 @@ def find_text_color(cropped_text):
     except IndexError:
         bgr = cropped_text[black_pixels[0][0]][black_pixels[0][1]]
 
-    return bgr_to_hex(bgr)
+    return bgr2hex(bgr)
 
 
 def find_background_color(image):
@@ -95,9 +126,18 @@ def find_background_color(image):
     return background_color
 
 
-def bgr_to_hex(bgr):
+def bgr2hex(bgr):
     """
     :param bgr: bgr color in the form of an array [.., .., ..]
     :return: hex color in string format
     """
     return '#%02x%02x%02x' % (bgr[2], bgr[1], bgr[0])
+
+
+def rgb2hex(rgb):
+    """
+    :param rgb: rgb color in the form of an array [.., .., ..]
+    :return: hex color in string format
+    """
+    return '#%02x%02x%02x' % (rgb[0], rgb[1], rgb[2])
+

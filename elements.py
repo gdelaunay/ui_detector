@@ -87,7 +87,7 @@ class TextElement(Element):
             self.color = iu.find_text_color(cropped_text)
         else:
             background_bgr = iu.find_background_color(cropped_text)
-            background_hex = iu.bgr_to_hex(background_bgr)
+            background_hex = iu.bgr2hex(background_bgr)
 
             x = int(cropped_text.shape[0] / 4)
             cropped_text = cropped_text[x:- x, x:- x]
@@ -95,14 +95,17 @@ class TextElement(Element):
 
             pil_image = Image.fromarray(cropped_text)
             button_bgr = pil_image.getpixel((0, int(cropped_text.shape[0]/2)))
-            button_hex = iu.bgr_to_hex(button_bgr)
-            background_hex, button_hex = iu.compare_colors(background_hex, button_hex, .15)
+            button_hex = iu.bgr2hex(button_bgr)
+            background_hex, button_hex = iu.liken_colors(background_hex, button_hex, .15)
+
+            text_color = iu.find_text_color(cropped_text)
+            button_hex, text_color = iu.differentiate_colors(button_hex, text_color, .1)
+
             if button_hex == background_hex:
-                border_color = text_color = iu.find_text_color(cropped_text)
+                border_color = text_color
                 button_color = [button_hex, border_color]
             else:
                 button_color = button_hex
-                text_color = iu.find_text_color(cropped_text)
 
             self.color = [button_color, text_color]
 

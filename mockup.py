@@ -1,5 +1,5 @@
 from elements import TextElement, ImageElement, Icon
-from image_utils import compare_colors
+from image_utils import liken_colors
 from zipfile import ZipFile
 from shortuuid import ShortUUID
 from constants import text_types, icon_types
@@ -127,7 +127,7 @@ class Mockup:
                         next_el.ymin = el.ymin
                         next_el.ymax = el.ymax
 
-                        el.color, next_el.color = compare_colors(el.color, next_el.color, .4)
+                        el.color, next_el.color = liken_colors(el.color, next_el.color, .4)
 
                     if el.xmin - h < next_el.xmin < el.xmin + h:
 
