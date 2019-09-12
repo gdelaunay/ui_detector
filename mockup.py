@@ -1,9 +1,8 @@
+from elements import TextElement, ImageElement, Icon
+from image_utils import compare_colors
 from zipfile import ZipFile
 from shortuuid import ShortUUID
-from elements import TextElement, ImageElement, Icon
 from constants import text_types, icon_types
-from skimage.color import rgb2lab, deltaE_cie76
-from colormap.colors import hex2rgb
 from PIL import Image
 import cv2
 import os
@@ -32,7 +31,7 @@ class Mockup:
             if box_class in text_types:
                 element = TextElement(box, box_class)
                 element.compute_text_properties(self.original_image)
-                if element.text_value.strip() == "":
+                if (element.text_value.strip() == "") & (element.ptype == "text"):
                     continue
 
             if box_class in icon_types:
@@ -128,7 +127,7 @@ class Mockup:
                         next_el.ymin = el.ymin
                         next_el.ymax = el.ymax
 
-                        el.color, next_el.color = compare_colors(el.color, next_el.color)
+                        el.color, next_el.color = compare_colors(el.color, next_el.color, .4)
 
                     if el.xmin - h < next_el.xmin < el.xmin + h:
 
@@ -147,8 +146,8 @@ class Mockup:
             pt1 = (element.xmin, element.ymin)
             pt2 = (element.xmax, element.ymax)
         else:
-            dx = 0.03
-            dy = 0.05
+            dx = 0.05
+            dy = 0.1
             xmin = int(element.xmin - dx * w) if (element.xmin - dx * w) > 0 else 0
             ymin = int(element.ymin - dy * h) if (element.ymin - dy * h) > 0 else 0
             pt1 = (xmin, ymin)
@@ -157,20 +156,4 @@ class Mockup:
         cv2.rectangle(self.background_image, pt1, pt2, filling_color, cv2.FILLED)
 
 
-def compare_colors(c1, c2):
-    """
 
-    :param c1: color attribute of a text element (either text_color or [button_color, text_color) in hex string format
-    :param c2: same
-    :return: new c1 & c2 values, both the same if they were similar enough
-    """
-
-    c1s, c2s = (c1[1], c2[1]) if len(c1) == 2 else (c1, c2)
-
-    r1, g1, b1 = hex2rgb(c1s, normalise=False)
-    lab1 = rgb2lab([[[r1, g1, b1]]])
-    r2, g2, b2 = hex2rgb(c2s, normalise=False)
-    lab2 = rgb2lab([[[r2, g2, b2]]])
-    diff = (deltaE_cie76(lab1, lab2) * 1e5)[0][0]
-
-    return (c1, c1) if diff < .4 else (c1, c2)
