@@ -94,9 +94,9 @@ class TextElement(Element):
             text_height = 0.6 * cropped_text.shape[0]
 
             pil_image = Image.fromarray(cropped_text)
-            button_bgr = pil_image.getpixel((3, int(cropped_text.shape[0]/2)))
+            button_bgr = pil_image.getpixel((0, int(cropped_text.shape[0]/2)))
             button_hex = iu.bgr_to_hex(button_bgr)
-            background_hex, button_hex = iu.compare_colors(background_hex, button_hex, .2)
+            background_hex, button_hex = iu.compare_colors(background_hex, button_hex, .15)
             if button_hex == background_hex:
                 border_color = text_color = iu.find_text_color(cropped_text)
                 button_color = [button_hex, border_color]
