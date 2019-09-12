@@ -25,11 +25,9 @@ def differentiate_colors(c1, c2, diff):
         h2, s2, v2 = rgb2hsv(r2, g2, b2, normalised=False)
 
         if v1 <= v2:
-            v1 = .75 * v1
-            v2 = 1.25 * v2 if 1.25 * v2 <= 1 else 1
+            v2 = 1.5 * v2 if 1.5 * v2 <= 1 else 1
         else:
             v2 = .75 * v2
-            v1 = 1.25 * v1 if 1.25 * v1 <= 1 else 1
 
         r1, g1, b1 = hsv2rgb(h1, s1, v1, normalised=True)
         r2, g2, b2 = hsv2rgb(h2, s2, v2, normalised=True)
@@ -55,7 +53,7 @@ def liken_colors(c1, c2, diff):
     cdiff = (deltaE_cie76(lab1, lab2) * 1e5)[0][0]
 
     if cdiff < diff:
-        c1t = c2t
+        c2t = c1t
 
     new_colors = ([c1[0], c1t], [c2[0], c2t]) if len(c1) == 2 else (c1t, c2t)
 

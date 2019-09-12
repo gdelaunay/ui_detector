@@ -119,15 +119,14 @@ class Mockup:
 
                     h = (el.ymax - el.ymin) * .33
 
-                    if (next_el.xmin - el.xmax < 100) & \
+                    if (abs(next_el.xmin - el.xmax) < 150) & \
                             (.5 * int(el.text_size) < int(next_el.text_size) < 1.5 * int(el.text_size)) & \
                             (el.ymin - h < next_el.ymin < el.ymin + 1.5 * h):
 
                         next_el.text_size = el.text_size
                         next_el.ymin = el.ymin
                         next_el.ymax = el.ymax
-
-                        el.color, next_el.color = liken_colors(el.color, next_el.color, .4)
+                        el.color, next_el.color = liken_colors(el.color, next_el.color, .55)
 
                     if el.xmin - h < next_el.xmin < el.xmin + h:
 
