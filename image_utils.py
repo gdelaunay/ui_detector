@@ -24,7 +24,7 @@ def differentiate_colors(c1, c2, diff):
         h1, s1, v1 = rgb2hsv(r1, g1, b1, normalised=False)
         h2, s2, v2 = rgb2hsv(r2, g2, b2, normalised=False)
 
-        if v1 <= v2:
+        if v1 <= v2 < .5:
             v2 = 1.5 * v2 if 1.5 * v2 <= 1 else 1
         else:
             v2 = .75 * v2
