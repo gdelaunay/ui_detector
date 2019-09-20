@@ -111,7 +111,6 @@ class TextElement(Element):
         self.text_size = str(int(text_height / nb_of_lines))
 
         self.text_value = ocr(cropped_text)
-        print(self.text_value)
 
 
 class ImageElement(Element):
