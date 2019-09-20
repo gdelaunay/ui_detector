@@ -77,8 +77,7 @@ class TextElement(Element):
         """
 
         cropped_text = original_image[self.ymin:self.ymax, self.xmin:self.xmax]
-        cv2.imshow("croopp", cropped_text)
-        cv2.waitKey(0)
+
         if self.ptype is "text":
             borderless = iu.remove_image_borders(cropped_text)
             text_height = borderless.shape[0]
