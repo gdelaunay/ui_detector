@@ -121,7 +121,10 @@ def find_text_color(cropped_text):
     try:
         bgr = cropped_text[black_pixels[1][0]][black_pixels[1][1]]
     except IndexError:
-        bgr = cropped_text[black_pixels[0][0]][black_pixels[0][1]]
+        try:
+            bgr = cropped_text[black_pixels[0][0]][black_pixels[0][1]]
+        except IndexError:
+            bgr = [0, 0, 0]
 
     return bgr2hex(bgr)
 
