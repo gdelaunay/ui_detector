@@ -94,7 +94,13 @@ def find_text_nb_of_lines(text_image):
 
     h = text_image.shape[0]
 
-    lines = [y for y in range(h - 1) if hist[y + 1] <= 2 < hist[y]]
+    lines = []
+    for y in range(h - 1):
+        try:
+            if hist[y + 1] <= 2 < hist[y]:
+                lines.append(y)
+        except IndexError:
+            pass
 
     return len(lines) if len(lines) > 0 else 1
 
