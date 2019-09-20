@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 from PIL import Image, ImageChops
-from ocr import preprocessing
+from ocr import preprocessing, resizing
 from skimage.color import rgb2lab, deltaE_cie76
 from colormap.colors import hex2rgb, rgb2hsv, hsv2rgb
 
@@ -106,8 +106,10 @@ def find_text_color(cropped_text):
     :param cropped_text: numpy image of a text element already cropped
     :return: text color in hex string format
     """
-
+    height = cropped_text.shape[0]
     binary = preprocessing(cropped_text)
+    binary = resizing(binary, height)
+
     black_pixels = np.argwhere(binary == 0)
 
     try:

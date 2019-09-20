@@ -28,17 +28,17 @@ def preprocessing(text_image):
     gray = cv2.cvtColor(text_image, cv2.COLOR_BGR2GRAY)
 
     # converting to binary image
-    _, binary = cv2.threshold(gray, 120, 255, cv2.THRESH_OTSU)
+    _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_OTSU)
 
     # optimal character height for Tesseract ?
-    # resized = resizing(binary, 80)
+    resized = resizing(binary, 120)
 
     count_white = np.sum(binary > 0)
     count_black = np.sum(binary == 0)
     if count_black > count_white:
-        binary = 255 - binary
+        resized = 255 - resized
 
-    return binary
+    return resized
 
 
 # resizing to a fixed height (keeping proportions) for OCR efficiency and preprocessing consistency
