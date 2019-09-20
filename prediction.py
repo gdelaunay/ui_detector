@@ -7,12 +7,12 @@ from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
 
 IMAGE_PATH = "testing_data/test3.jpg"
-MODEL_NAME = 'ui_detection_graph_3363.pb'
+MODEL_NAME = 'v1_detection_graph_3974.pb'
 
 # Number of different classes to detect
 NUM_CLASSES = 19
 # Minimum confidence score under wich we don't show/save predictions
-MIN_SCORE_TRESH = .4
+MIN_SCORE_TRESH = .001
 
 
 def detection(image):
@@ -56,10 +56,11 @@ def detection(image):
             (boxes, scores, classes, num_detections) = sess.run(
                 [boxes, scores, classes, num_detections],
                 feed_dict={image_tensor: image_np_expanded})
-
-            selected_boxes, selected_classes, selected_scores = delete_overlapping_boxes_by_class(sess, boxes, classes, scores)
+            print(np.squeeze(classes))
+            selected_boxes, selected_classes, selected_scores = np.squeeze(boxes), np.squeeze(classes), np.squeeze(scores)
             # np.squeeze(boxes), np.squeeze(classes), np.squeeze(scores)
             # delete_overlapping_boxes(sess, boxes, classes, scores)
+            # delete_overlapping_boxes_by_class(sess, boxes, classes, scores)
 
             # Visualization of the results
             vis_util.visualize_boxes_and_labels_on_image_array(
@@ -73,8 +74,8 @@ def detection(image):
                 min_score_thresh=MIN_SCORE_TRESH,
                 max_boxes_to_draw=1000)
 
-            #display_output(image)
-
+            display_output(image)
+            cv2.imwrite("output/" + MODEL_NAME + ".jpg", image)
             normalized_boxes = get_pixelwise_boxes_coordinates(image, selected_boxes)
 
     return normalized_boxes, selected_classes, selected_scores
