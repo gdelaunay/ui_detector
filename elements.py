@@ -77,13 +77,11 @@ class TextElement(Element):
         """
 
         cropped_text = original_image[self.ymin:self.ymax, self.xmin:self.xmax]
-
+        cv2.imshow("croopp", cropped_text)
+        cv2.waitKey(0)
         if self.ptype is "text":
-            padding_color = iu.find_background_color(cropped_text)
-            cropped_text = iu.remove_image_borders(cropped_text)
-            cropped_text = padding(cropped_text, int(cropped_text.shape[0]/5), padding_color)
-
-            text_height = 0.8 * cropped_text.shape[0]
+            borderless = iu.remove_image_borders(cropped_text)
+            text_height = borderless.shape[0]
             self.color = iu.find_text_color(cropped_text)
         else:
             background_bgr = iu.find_background_color(cropped_text)
@@ -91,10 +89,10 @@ class TextElement(Element):
 
             x = int(cropped_text.shape[0] / 4)
             cropped_text = cropped_text[x:- x, x:- x]
-            text_height = 0.6 * cropped_text.shape[0]
+            text_height = 0.7 * cropped_text.shape[0]
 
             pil_image = Image.fromarray(cropped_text)
-            button_bgr = pil_image.getpixel((0, int(cropped_text.shape[0]/2)))
+            button_bgr = pil_image.getpixel((int(cropped_text.shape[1]/10), int(cropped_text.shape[0]/2)))
             button_hex = iu.bgr2hex(button_bgr)
             background_hex, button_hex = iu.liken_colors(background_hex, button_hex, .15)
 
@@ -114,6 +112,7 @@ class TextElement(Element):
         self.text_size = str(int(text_height / nb_of_lines))
 
         self.text_value = ocr(cropped_text)
+        print(self.text_value)
 
 
 class ImageElement(Element):
