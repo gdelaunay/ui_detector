@@ -11,7 +11,6 @@ dataset/
 testing_data/
 output/
 
-test_scripts.py
 
 .idea/
 *.idea
