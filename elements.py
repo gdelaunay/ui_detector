@@ -88,6 +88,7 @@ class TextElement(Element):
             background_hex = iu.bgr2hex(background_bgr)
 
             cropped_text, button_hex, text_color, text_height = iu.find_button_properties(cropped_text)
+            button_hex, background_hex = iu.liken_colors(button_hex, background_hex, .15)
 
             if button_hex == background_hex:
                 border_color = text_color
