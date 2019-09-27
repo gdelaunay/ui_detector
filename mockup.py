@@ -120,7 +120,7 @@ class Mockup:
                     h = (el.ymax - el.ymin) * .33
 
                     if (abs(next_el.xmin - el.xmax) < 150) & \
-                            (.5 * int(el.text_size) < int(next_el.text_size) < 1.5 * int(el.text_size)) & \
+                            (.7 * int(el.text_size) < int(next_el.text_size) < 1.3 * int(el.text_size)) & \
                             (el.ymin - h < next_el.ymin < el.ymin + 1.5 * h):
 
                         next_el.text_size = el.text_size

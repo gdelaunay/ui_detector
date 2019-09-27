@@ -9,6 +9,7 @@ from PIL import Image
 from shortuuid import ShortUUID
 from constants import icon_types, b64_icons, text_types, t_firsts_tags, t_properties
 from ocr import ocr, padding
+import numpy as np
 
 
 class Element(ABC):
@@ -86,17 +87,7 @@ class TextElement(Element):
             background_bgr = iu.find_background_color(cropped_text)
             background_hex = iu.bgr2hex(background_bgr)
 
-            x = int(cropped_text.shape[0] / 4)
-            cropped_text = cropped_text[x:- x, x:- x]
-            text_height = 0.7 * cropped_text.shape[0]
-
-            pil_image = Image.fromarray(cropped_text)
-            button_bgr = pil_image.getpixel((int(cropped_text.shape[1]/10), int(cropped_text.shape[0]/2)))
-            button_hex = iu.bgr2hex(button_bgr)
-            background_hex, button_hex = iu.liken_colors(background_hex, button_hex, .15)
-
-            text_color = iu.find_text_color(cropped_text)
-            button_hex, text_color = iu.differentiate_colors(button_hex, text_color, .1)
+            cropped_text, button_hex, text_color, text_height = iu.find_button_properties(cropped_text)
 
             if button_hex == background_hex:
                 border_color = text_color
@@ -106,11 +97,13 @@ class TextElement(Element):
 
             self.color = [button_color, text_color]
 
-        nb_of_lines = iu.find_text_nb_of_lines(cropped_text)
+        self.text_value = ocr(cropped_text)
+
+        nb_of_lines = iu.find_text_nb_of_lines(self.text_value)
+
+        text_height = 0.75 * text_height if nb_of_lines > 1 else text_height
 
         self.text_size = str(int(text_height / nb_of_lines))
-
-        self.text_value = ocr(cropped_text)
 
 
 class ImageElement(Element):

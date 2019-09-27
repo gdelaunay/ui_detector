@@ -82,27 +82,11 @@ def remove_image_borders(image):
     return cv2_image
 
 
-def find_text_nb_of_lines(text_image):
-    """
-    :param text_image: any BGR image of text (aligned = not rotated)
-    :return: number of lines found in text_image
-    """
+def find_text_nb_of_lines(text):
 
-    binary = 255 - preprocessing(text_image)
+    nb_of_lines = text.count('\n') + text.count('\r') + 1
 
-    hist = cv2.reduce(binary, 1, cv2.REDUCE_AVG).reshape(-1)
-
-    h = text_image.shape[0]
-
-    lines = []
-    for y in range(h - 1):
-        try:
-            if hist[y + 1] <= 2 < hist[y]:
-                lines.append(y)
-        except IndexError:
-            pass
-
-    return len(lines) if len(lines) > 0 else 1
+    return nb_of_lines
 
 
 def find_text_color(cropped_text):
@@ -127,6 +111,64 @@ def find_text_color(cropped_text):
             bgr = [0, 0, 0]
 
     return bgr2hex(bgr)
+
+
+def find_button_text_position(text_image):
+    """
+    :param text_image: any BGR image of text (aligned = not rotated)
+    :return: upper, lower tuple : y axis value of start of first text line and bottom of last
+    """
+
+    h, w = text_image.shape[:2]
+    binary = 255 - preprocessing(text_image)
+    binary = resizing(binary, h)
+
+    hist = cv2.reduce(binary, 1, cv2.REDUCE_AVG).reshape(-1)
+
+    th = 50
+    uppers = [y for y in range(h - 1) if hist[y] <= th < hist[y + 1]]
+    lowers = [y for y in range(h - 1) if hist[y] > th >= hist[y + 1]]
+
+    try:
+        if len(uppers) > 3:
+            upper = uppers[1]
+            lower = lowers[-2] if lowers[-2] - upper > 5 else lowers[-1]
+        else:
+            upper = uppers[0]
+            lower = lowers[-1]
+    except IndexError:
+        upper = 0
+        lower = int(0.6 * h)
+
+    return upper, lower
+
+
+def find_button_properties(button_image):
+
+    height, width = button_image.shape[:2]
+    upper, lower = find_button_text_position(button_image)
+    text_height = 1.5 * (lower - upper)
+
+    x = int(height / 10)
+    ymin = upper - x if upper - x > 0 else 0
+    ymax = lower + x if lower + x < height else height
+    xmin = x
+    xmax = width - x
+
+    button_image = button_image[ymin:ymax, xmin:xmax]
+
+    x = int(xmax/2)
+    bgr1 = (button_image[0][x]).astype(np.int32)
+    bgr2 = button_image[0][x-1].astype(np.int32)
+    bgr3 = button_image[1][x+1].astype(np.int32)
+
+    bgr_mean = ((bgr1 + bgr2 + bgr3) / 3).astype(int)
+
+    button_hex = bgr2hex(bgr_mean)
+
+    text_color = find_text_color(button_image)
+
+    return button_image, button_hex, text_color, text_height
 
 
 def find_background_color(image):
