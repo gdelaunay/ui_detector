@@ -133,21 +133,38 @@ def find_button_text_position(text_image):
 
     try:
         if len(uppers) > 3:
-            upper = uppers[1]
-            lower = lowers[-2] if lowers[-2] - upper > 5 else lowers[-1]
+            ymin = uppers[1]
+            ymax = lowers[-2] if lowers[-2] - ymin > 5 else lowers[-1]
         else:
-            upper = uppers[0]
-            lower = lowers[-1]
+            ymin = uppers[0]
+            ymax = lowers[-1]
     except IndexError:
-        upper = 0
-        lower = int(0.6 * h)
+        ymin = 0
+        ymax = int(0.6 * h)
 
-    return upper, lower
+    hist = cv2.reduce(binary, 0, cv2.REDUCE_AVG).reshape(-1)
+
+    count = np.bincount(hist)
+
+    th = np.argmax(count)
+    lefters = [x for x in range(len(hist) - 1) if hist[x] <= th < hist[x + 1]]
+    righters = [x for x in range(len(hist) - 1) if hist[x] > th >= hist[x + 1]]
+
+    # if no border :
+    xmin = lefters[0]
+    xmax = righters[-1]
+
+    # if border :
+    xmin = lefters[1]
+    xmax = righters[-2]
+
+    return ymin, ymax
 
 
 def find_button_properties(button_image):
 
     height, width = button_image.shape[:2]
+    print(str(height) + "-  jnzfe  - " + str(width))
     upper, lower = find_button_text_position(button_image)
     text_height = 1.5 * (lower - upper)
 
