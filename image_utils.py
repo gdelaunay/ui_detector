@@ -120,6 +120,8 @@ def find_button_text_position(text_image):
     """
 
     h, w = text_image.shape[:2]
+    x = int(h/8)
+    text_image = text_image[x:-x, x:-x]
     binary = 255 - preprocessing(text_image)
     binary = resizing(binary, h)
 
