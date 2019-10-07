@@ -5,6 +5,9 @@ from ocr import preprocessing, resizing
 from skimage.color import rgb2lab, deltaE_cie76
 from colormap.colors import hex2rgb, rgb2hsv, hsv2rgb
 
+import matplotlib
+matplotlib.use('TkAgg')
+
 
 def differentiate_colors(c1, c2, diff):
     """
@@ -91,24 +94,19 @@ def find_text_nb_of_lines(text):
 
 def find_text_color(cropped_text):
     """
-    compute text color by converting image to binary (OTSU treshold), take first black pixel (= first
-    and find its color value in the original text image
+    find second most present color in the image = text color ?
     :param cropped_text: numpy image of a text element already cropped
     :return: text color in hex string format
     """
-    height = cropped_text.shape[0]
-    binary = preprocessing(cropped_text)
-    binary = resizing(binary, height)
 
-    black_pixels = np.argwhere(binary == 0)
+    pixels = np.float32(cropped_text.reshape(-1, 3))
 
-    try:
-        bgr = cropped_text[black_pixels[1][0]][black_pixels[1][1]]
-    except IndexError:
-        try:
-            bgr = cropped_text[black_pixels[0][0]][black_pixels[0][1]]
-        except IndexError:
-            bgr = [0, 0, 0]
+    _, labels, palette = cv2.kmeans(pixels, 20, None, (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 200, .1), 10,
+                                    cv2.KMEANS_RANDOM_CENTERS)
+    _, counts = np.unique(labels, return_counts=True)
+    indices = np.argsort(counts)[::-1]
+
+    bgr = palette[indices[1]].astype(np.int)
 
     return bgr2hex(bgr)
 
@@ -151,12 +149,12 @@ def find_button_text_position(text_image):
     righters = [x for x in range(len(hist) - 1) if hist[x] > th >= hist[x + 1]]
 
     # if no border :
-    xmin = lefters[0]
-    xmax = righters[-1]
+    # xmin = lefters[0]
+    # xmax = righters[-1]
 
     # if border :
-    xmin = lefters[1]
-    xmax = righters[-2]
+    # xmin = lefters[1]
+    # xmax = righters[-2]
 
     return ymin, ymax
 
@@ -164,7 +162,7 @@ def find_button_text_position(text_image):
 def find_button_properties(button_image):
 
     height, width = button_image.shape[:2]
-    print(str(height) + "-  jnzfe  - " + str(width))
+
     upper, lower = find_button_text_position(button_image)
     text_height = 1.5 * (lower - upper)
 
