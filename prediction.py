@@ -78,7 +78,7 @@ def detection(image):
                 min_score_thresh=MIN_SCORE_TRESH,
                 max_boxes_to_draw=1000)
 
-            # display_output(image)
+            display_output(image)
             cv2.imwrite("output/" + MODEL_NAME + ".jpg", image)
             normalized_boxes = get_pixelwise_boxes_coordinates(image, selected_boxes)
 
