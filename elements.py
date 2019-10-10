@@ -10,7 +10,6 @@ from shortuuid import ShortUUID
 from constants import icon_types, b64_icons, text_types, t_firsts_tags, t_properties
 from ocr import ocr, padding
 import numpy as np
-from img2svg import Rectangle, Text, Image, ButtonRectangle, Scene, Tspan
 
 
 class Element(ABC):
@@ -21,74 +20,21 @@ class Element(ABC):
         self.ymax = int(coordinates[2])
         self.xmax = int(coordinates[3])
         self.xml_element = xml_element
-        self.svg_id = None
 
     @abstractmethod
     def redact_xml(self):
-        """ Translate the Element object into xml pencil format """
-        pass
-
-    def create_svg_item(self):
-        """
-        Translate the Element object into sequence of SVG
-        :return: SVG sequence
-        """
+        """ translate the Element object into xml pencil format """
         pass
 
 
 class TextElement(Element):
 
-    def __init__(self, coordinates, ptype, text_size=None, text_value=None, color=None, svg_item=None):
+    def __init__(self, coordinates, ptype, text_size=None, text_value=None, color=None):
         super().__init__(coordinates)
         self.ptype = ptype
         self.text_size = text_size
         self.text_value = text_value
         self.color = color
-        self.svg_item = svg_item
-        self.text_dim = None
-
-    def create_svg_item(self):
-
-        # SVG line break need Tspan Tag
-        lst_tspan = self.text_value.split('\n')
-
-        if self.ptype is "text":
-
-            # If multi-lines
-            if len(lst_tspan) > 1:
-
-                text = Text((self.xmin, self.ymin), '', self.text_size, self.color, self.svg_id)
-
-                id = 0
-
-                for tspan in lst_tspan:
-                    id += 1
-                    text.add_tspan(Tspan(self.xmin, "1.2em", tspan, 'tspan' + self.svg_id + str(id)))
-
-                self.svg_item = text
-
-            else:
-                self.svg_item = Text((self.xmin + self.text_dim[2], self.ymin + self.text_dim[0]), self.text_value,
-                                     self.text_size, self.color, self.svg_id)
-
-        # Button, etc
-        else:
-
-            if len(self.color[0]) == 2:
-                border_color = self.color[0][1]
-                self.color = self.color[0][0]
-            else:
-                border_color = self.color[1]
-                self.color = self.color[0]
-
-            width, height = get_width_height(self)
-
-            shape = Rectangle((self.xmin, self.ymin), height, width, self.color, border_color, 1, "rect" + self.svg_id)
-
-            text = Text((self.xmin + width / 2, self.ymin + height / 2), self.text_value, self.text_size,
-                        border_color, "text" + self.svg_id, 'dominant-baseline="middle" text-anchor="middle"')
-
-            self.svg_item = ButtonRectangle(shape, text, self.svg_id)
 
     def redact_xml(self):
 
@@ -137,15 +83,12 @@ class TextElement(Element):
             borderless = iu.remove_image_borders(cropped_text)
             text_height = borderless.shape[0]
             self.color = iu.find_text_color(cropped_text)
-            self.text_dim = iu.find_text_position(cropped_text)
         else:
             background_bgr = iu.find_background_color(cropped_text)
             background_hex = iu.bgr2hex(background_bgr)
 
-            cropped_text, button_hex, text_color, text_height, dim_text = iu.find_button_properties(cropped_text)
+            cropped_text, button_hex, text_color, text_height = iu.find_button_properties(cropped_text)
             button_hex, background_hex = iu.liken_colors(button_hex, background_hex, .15)
-
-            self.text_dim = dim_text
 
             if button_hex == background_hex:
                 border_color = text_color
@@ -166,18 +109,10 @@ class TextElement(Element):
 
 class ImageElement(Element):
 
-    def __init__(self, coordinates, image=None, b64=None, svg_item=None):
+    def __init__(self, coordinates, image=None, b64=None):
         super().__init__(coordinates)
         self.image = image
         self.b64 = b64
-        self.svg_item = svg_item
-        self.ptype = 'Image'
-
-    def create_svg_item(self):
-
-        width, height = get_width_height(self)
-
-        self.svg_item = Image((self.xmin, self.ymin), self.b64, self.svg_id, height, width)
 
     def redact_xml(self, **background):
 
@@ -221,15 +156,9 @@ class ImageElement(Element):
 
 class Icon(Element):
 
-    def __init__(self, coordinates, ptype, svg_item=None):
+    def __init__(self, coordinates, ptype):
         super().__init__(coordinates)
         self.ptype = ptype
-        self.svg_item = svg_item
-
-    def create_svg_item(self):
-
-        width, height = get_width_height(self)
-        self.svg_item = Image((self.xmin, self.ymin), b64_icons[icon_types.index(self.ptype)], self.svg_id, height, width)
 
     def redact_xml(self):
 
@@ -247,27 +176,17 @@ class Icon(Element):
             ' </g> \n '
 
 
-def get_width_height(element):
-    """
-    Get width and height of element in image
-    :param element:
-    :return:
-    """
-    width = int(element.xmax - element.xmin)
-    height = int(element.ymax - element.ymin)
-    return width, height
-
-
 def get_element_properties(element):
     """
-    Compute an element's properties needed to write it in xml file
+    compute an element's properties needed to write it in xml file
     :param element: any Element object
     :return: its uuid, first (xmin, ymin) point, and its size "width, height" in string format
     """
 
     generated_id = ShortUUID().random(length=12)
     first_point = str(int(element.xmin)) + "," + str(int(element.ymin))
-    width, height = get_width_height(element)
+    width = int(element.xmax - element.xmin)
+    height = int(element.ymax - element.ymin)
     size = str(width) + "," + str(height)
 
     return generated_id, first_point, size

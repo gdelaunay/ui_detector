@@ -1,12 +1,9 @@
 from elements import TextElement, ImageElement, Icon
-from image_utils import liken_colors, get_main_color
+from image_utils import liken_colors
 from zipfile import ZipFile
 from shortuuid import ShortUUID
 from constants import text_types, icon_types
-import img2svg
-import collections
 from PIL import Image
-import numpy as np
 import cv2
 import os
 
@@ -21,19 +18,13 @@ class Mockup:
         self.elements = elements if elements else []
         self.xml_page = xml_page if xml_page else ""
         self.generated_id = ShortUUID().random(length=8)
-        self.current_id_svg = 0
 
     def translate_raw_results(self):
-        """
-        Translate TersonFlow predictions to Elements according to type (text, button, etc)
-        """
 
         classes = ["text", "text_input", "image", "rectangle_button", "oval_button", "search", "login", "lock", "chat",
                    "phone", "checkbox", "home", "help", "down_arrow", "right_arrow", "menu", "plus", "mail", "settings"]
 
         for i, box in enumerate(self.boxes):
-
-            self.current_id_svg += 1
 
             box_class = classes[int(self.classes[i] - 1)]
 
@@ -53,40 +44,11 @@ class Mockup:
 
             self.extract_from_background(element)
 
-            # Only for SVG export
-            element.svg_id = element.ptype + str(self.current_id_svg)
-
             self.elements.append(element)
 
         self.elements.sort(key=lambda x: x.xmax)
 
-    def create_svg(self, path):
-        """
-        Create the SVG with all SVG sequence (all elements)
-        :param path: Path to write SVG
-        :return: String : SVG Filename
-        """
-
-        height, width = self.original_image.shape[:2]
-
-        svg = img2svg.Scene(self.current_id_svg, self.title, height, width)
-
-        background_element = ImageElement([0, 0, height, width], self.background_image)
-        background_element.set_base64()
-
-        svg.add(img2svg.Image((0, 0), background_element.b64, "background" + str(self.current_id_svg), height, width))
-
-        for element in self.elements:
-            element.create_svg_item()
-            svg.add(element.svg_item)
-
-        return svg.write_svg(path)
-
     def create_xml_page(self):
-        """
-        Create XML page for pencil with all xml elements
-        :return:
-        """
 
         height, width = self.original_image.shape[:2]
 
@@ -121,9 +83,6 @@ class Mockup:
         self.xml_page = xml_header + xml_content + ' </p:Page> '
 
     def generate_pencil_file(self):
-        """
-        Put in shape XML to be Pencil compatible and compact it with resources in Zip
-        """
 
         path = "output/mockup_" + self.title + "_" + self.generated_id + "/"
         os.makedirs(path)
@@ -151,9 +110,6 @@ class Mockup:
         os.rename("page_" + self.generated_id + ".xml", path + "page_" + self.generated_id + ".xml")
 
     def align_text_elements(self):
-        """
-        Align elements en y axis according to distance between each others
-        """
 
         for el in (x for x in self.elements if isinstance(x, TextElement)):
 
@@ -161,16 +117,16 @@ class Mockup:
 
                 if el.ptype == next_el.ptype:
 
-                    h = (el.ymax - el.ymin) * .33
+                    h = (el.ymax - el.ymin) * .25
 
                     if (abs(next_el.xmin - el.xmax) < 150) & \
                             (.7 * int(el.text_size) < int(next_el.text_size) < 1.3 * int(el.text_size)) & \
-                            (el.ymin - h < next_el.ymin < el.ymin + 1.5 * h):
+                            (el.ymin - h < next_el.ymin < el.ymin + h):
 
                         next_el.text_size = el.text_size
                         next_el.ymin = el.ymin
                         next_el.ymax = el.ymax
-                        el.color, next_el.color = liken_colors(el.color, next_el.color, .55)
+                        el.color, next_el.color = liken_colors(el.color, next_el.color, .35)
 
                     if el.xmin - h < next_el.xmin < el.xmin + h:
 
@@ -180,23 +136,10 @@ class Mockup:
                             next_el.text_size = el.text_size
 
     def extract_from_background(self, element):
-        """
-        Fill old position element in the background with most reveling color
-        :param element: Boxe prediction of Tensorfolw (coord)
-        """
-
-        w, h = ((element.xmax - element.xmin), (element.ymax - element.ymin))
 
         pil_image = Image.fromarray(self.background_image)
-        corner_tl = pil_image.getpixel((element.xmin, element.ymin))
-        corner_tr = pil_image.getpixel((element.xmin + w, element.ymin))
-        corner_bl = pil_image.getpixel((element.xmin, element.ymin + h))
-        corner_br = pil_image.getpixel((element.xmin + w, element.ymin + h))
-
-        lst_corners = [corner_br, corner_bl, corner_tr, corner_tl]
-        approx_color = [item for item, count in collections.Counter(lst_corners).items() if count > 1]
-
-        filling_color = approx_color[0] if approx_color else corner_tl
+        filling_color = pil_image.getpixel((element.xmin, element.ymin))
+        w, h = ((element.xmax - element.xmin), (element.ymax - element.ymin))
 
         if isinstance(element, ImageElement):
             pt1 = (element.xmin, element.ymin)
