@@ -81,7 +81,8 @@ def remove_image_borders(image):
         pil_image = pil_image.crop(bbox)
 
     cv2_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
-
+    cv2.imshow("jnrz", cv2_image)
+    cv2.waitKey(0)
     return cv2_image
 
 

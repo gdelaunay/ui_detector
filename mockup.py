@@ -117,16 +117,16 @@ class Mockup:
 
                 if el.ptype == next_el.ptype:
 
-                    h = (el.ymax - el.ymin) * .33
+                    h = (el.ymax - el.ymin) * .25
 
                     if (abs(next_el.xmin - el.xmax) < 150) & \
                             (.7 * int(el.text_size) < int(next_el.text_size) < 1.3 * int(el.text_size)) & \
-                            (el.ymin - h < next_el.ymin < el.ymin + 1.5 * h):
+                            (el.ymin - h < next_el.ymin < el.ymin + h):
 
                         next_el.text_size = el.text_size
                         next_el.ymin = el.ymin
                         next_el.ymax = el.ymax
-                        el.color, next_el.color = liken_colors(el.color, next_el.color, .55)
+                        el.color, next_el.color = liken_colors(el.color, next_el.color, .35)
 
                     if el.xmin - h < next_el.xmin < el.xmin + h:
 
