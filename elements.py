@@ -68,7 +68,7 @@ class TextElement(Element):
                 self.svg_item = text
 
             else:
-                self.svg_item = Text((self.xmin + self.text_dim[2], self.ymin + self.text_dim[0]), self.text_value,
+                self.svg_item = Text((self.xmin + self.text_dim[0], self.ymin + self.text_dim[1]), self.text_value,
                                      self.text_size, self.color, self.svg_id)
 
         # Button, etc
@@ -136,8 +136,11 @@ class TextElement(Element):
         if self.ptype is "text":
             borderless = iu.remove_image_borders(cropped_text)
             text_height = borderless.shape[0]
+
             self.color = iu.find_text_color(cropped_text)
-            self.text_dim = iu.find_text_position(cropped_text)
+
+            bbox, _ = iu.detect_border(cropped_text)
+            self.text_dim = (bbox[0], bbox[1], bbox[2], bbox[3])
         else:
             background_bgr = iu.find_background_color(cropped_text)
             background_hex = iu.bgr2hex(background_bgr)

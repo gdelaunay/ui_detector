@@ -98,6 +98,7 @@ def remove_image_borders(image):
     """
 
     bbox, pil_image = detect_border(image)
+
     if bbox:
         pil_image = pil_image.crop(bbox)
 
@@ -185,8 +186,6 @@ def find_text_position(text_image):
         xmax = righters[-1] if righters else int(w * 0.6)
 
     cv2.imwrite("output/" + str(xmin) + "-" + str(ymin) + ".jpg", text_image)
-
-    return ymin, ymax
 
     return ymin if ymin > 0 else 10, ymax, xmin, xmax
 
