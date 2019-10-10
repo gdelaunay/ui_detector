@@ -14,3 +14,7 @@ output/
 
 .idea/
 *.idea
+
+ui_detector_api/results_prediction/
+
+ui_detector_api/uploads/
