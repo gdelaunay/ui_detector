@@ -4,8 +4,8 @@ from object_detection import exporter
 from object_detection.protos import pipeline_pb2
 
 PIPELINE_CONFIG_PATH = "training/faster_rcnn_resnet50_coco.config"
-CHECKPOINT_PATH = "training/model.ckpt-4460"
-OUTPUT_DIR = "trained_graphs/v2/ui_detection_graph_4460.pb"
+CHECKPOINT_PATH = "training/model.ckpt-1299"
+OUTPUT_DIR = "trained_graphs/ui_detection_graph_1299.pb"
 
 
 def main(_):

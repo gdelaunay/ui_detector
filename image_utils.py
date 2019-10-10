@@ -5,8 +5,18 @@ from ocr import preprocessing, resizing
 from skimage.color import rgb2lab, deltaE_cie76
 from colormap.colors import hex2rgb, rgb2hsv, hsv2rgb
 
-import matplotlib
-matplotlib.use('TkAgg')
+
+def get_main_color(image):
+    """
+    Get most reveling color in image
+    :param image:
+    :return: Color Bgr Tuple
+    """
+    a2D = image.reshape(-1, image.shape[-1])
+    col_range = (256, 256, 256)  # generically : a2D.max(0)+1
+    a1D = np.ravel_multi_index(a2D.T, col_range)
+
+    return np.unravel_index(np.bincount(a1D).argmax(), col_range)
 
 
 def differentiate_colors(c1, c2, diff):
@@ -63,12 +73,11 @@ def liken_colors(c1, c2, diff):
     return new_colors
 
 
-def remove_image_borders(image):
+def detect_border(image):
     """
-    find if an image has border (from approximate object detections result) by looking at first pixel color, and if so
-    remove them
-    :param image: any
-    :return: same image without borders (if it had any)
+     find if an image has border (from approximate object detections result) by looking at first pixel color
+    :param image:
+    :return: box border, array Image
     """
 
     rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -76,18 +85,31 @@ def remove_image_borders(image):
     bg = Image.new(pil_image.mode, pil_image.size, pil_image.getpixel((0, 0)))
     diff = ImageChops.difference(pil_image, bg)
     diff = ImageChops.add(diff, diff, 2.0, -100)
-    bbox = diff.getbbox()
+    return diff.getbbox(), pil_image
+
+
+def remove_image_borders(image):
+    """
+    Remove image border
+    :param image: any
+    :return: same image without borders (if it had any)
+    """
+
+    bbox, pil_image = detect_border(image)
     if bbox:
         pil_image = pil_image.crop(bbox)
 
     cv2_image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
-    cv2.imshow("jnrz", cv2_image)
-    cv2.waitKey(0)
+
     return cv2_image
 
 
 def find_text_nb_of_lines(text):
-
+    """
+    Return number of lines in text
+    :param text:
+    :return: Int
+    """
     nb_of_lines = text.count('\n') + text.count('\r') + 1
 
     return nb_of_lines
@@ -95,24 +117,29 @@ def find_text_nb_of_lines(text):
 
 def find_text_color(cropped_text):
     """
-    find second most present color in the image = text color ?
+    compute text color by converting image to binary (OTSU treshold), take first black pixel (= first
+    and find its color value in the original text image
     :param cropped_text: numpy image of a text element already cropped
     :return: text color in hex string format
     """
+    height = cropped_text.shape[0]
+    binary = preprocessing(cropped_text)
+    binary = resizing(binary, height)
 
-    pixels = np.float32(cropped_text.reshape(-1, 3))
+    black_pixels = np.argwhere(binary == 0)
 
-    _, labels, palette = cv2.kmeans(pixels, 20, None, (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 200, .1), 10,
-                                    cv2.KMEANS_RANDOM_CENTERS)
-    _, counts = np.unique(labels, return_counts=True)
-    indices = np.argsort(counts)[::-1]
-
-    bgr = palette[indices[1]].astype(np.int)
+    try:
+        bgr = cropped_text[black_pixels[1][0]][black_pixels[1][1]]
+    except IndexError:
+        try:
+            bgr = cropped_text[black_pixels[0][0]][black_pixels[0][1]]
+        except IndexError:
+            bgr = [0, 0, 0]
 
     return bgr2hex(bgr)
 
 
-def find_button_text_position(text_image):
+def find_text_position(text_image):
     """
     :param text_image: any BGR image of text (aligned = not rotated)
     :return: upper, lower tuple : y axis value of start of first text line and bottom of last
@@ -126,7 +153,9 @@ def find_button_text_position(text_image):
 
     hist = cv2.reduce(binary, 1, cv2.REDUCE_AVG).reshape(-1)
 
-    th = 50
+    count = np.bincount(hist)
+    th = np.argmax(count)
+
     uppers = [y for y in range(h - 1) if hist[y] <= th < hist[y + 1]]
     lowers = [y for y in range(h - 1) if hist[y] > th >= hist[y + 1]]
 
@@ -149,29 +178,45 @@ def find_button_text_position(text_image):
     lefters = [x for x in range(len(hist) - 1) if hist[x] <= th < hist[x + 1]]
     righters = [x for x in range(len(hist) - 1) if hist[x] > th >= hist[x + 1]]
 
-    # if no border :
-    # xmin = lefters[0]
-    # xmax = righters[-1]
+    have_border, _ = detect_border(text_image)
 
-    # if border :
-    # xmin = lefters[1]
-    # xmax = righters[-2]
+    if have_border and lefters and righters:
+        xmin = lefters[1] if 1 in lefters else lefters[0]
+        xmax = righters[-2] if -2 in righters else righters[-1]
+    else:
+        xmin = lefters[0] if lefters else 0
+        xmax = righters[-1] if righters else int(w * 0.6)
 
-    return ymin, ymax
+    cv2.imwrite("output/" + str(xmin) + "-" + str(ymin) + ".jpg", text_image)
+
+    cv2.line(text_image, (0, ymin), (1000, ymin), (0, 255, 0))
+    cv2.line(text_image, (0, ymax), (1000, ymax), (0, 255, 0))
+    cv2.line(text_image, (xmin, 0), (xmin, 1000), (0, 255, 0))
+    cv2.line(text_image, (xmax, 0), (xmax, 1000), (0, 255, 0))
+    cv2.imshow('object detection',text_image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+    return ymin if ymin > 0 else 10, ymax, xmin, xmax
 
 
 def find_button_properties(button_image):
-
+    """
+    Get Coord of text in button, main color and border color
+    :param button_image:
+    :return: Information on button
+    """
     height, width = button_image.shape[:2]
-
-    upper, lower = find_button_text_position(button_image)
-    text_height = 1.5 * (lower - upper)
+    ymin, ymax, xmin, xminx = find_text_position(button_image)
+    text_height = 1.1 * (ymax - ymin)
 
     x = int(height / 10)
-    ymin = upper - x if upper - x > 0 else 0
-    ymax = lower + x if lower + x < height else height
+    ymin = ymin - x if ymin - x > 0 else 0
+    ymax = ymax + x if ymax + x < height else height
     xmin = x
     xmax = width - x
+
+    lst_dim_text = [ymin, ymax, xmin, xmax]
 
     button_image = button_image[ymin:ymax, xmin:xmax]
 
@@ -186,10 +231,15 @@ def find_button_properties(button_image):
 
     text_color = find_text_color(button_image)
 
-    return button_image, button_hex, text_color, text_height
+    return button_image, button_hex, text_color, text_height, lst_dim_text
 
 
 def find_background_color(image):
+    """
+    Return background color
+    :param image: Bgr color tuple
+    :return:
+    """
     pil_image = Image.fromarray(image)
     background_color = pil_image.getpixel((0, 0))
     return background_color
@@ -209,4 +259,3 @@ def rgb2hex(rgb):
     :return: hex color in string format
     """
     return '#%02x%02x%02x' % (rgb[0], rgb[1], rgb[2])
-
