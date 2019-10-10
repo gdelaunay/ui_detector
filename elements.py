@@ -143,6 +143,7 @@ class TextElement(Element):
             background_hex = iu.bgr2hex(background_bgr)
 
             cropped_text, button_hex, text_color, text_height, dim_text = iu.find_button_properties(cropped_text)
+
             button_hex, background_hex = iu.liken_colors(button_hex, background_hex, .15)
 
             self.text_dim = dim_text

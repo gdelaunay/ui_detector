@@ -53,10 +53,12 @@ class Scene:
         :param filename:
         :return: SVG Filename
         """
+
         if filename:
             self.svgname = filename
         else:
             self.svgname = self.name + ".svg"
+
         file = open(os.path.join(path, self.svgname), 'w', encoding='UTF-8')
         file.writelines(self.strarray())
         file.close()

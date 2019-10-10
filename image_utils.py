@@ -8,6 +8,7 @@ from colormap.colors import hex2rgb, rgb2hsv, hsv2rgb
 import matplotlib
 matplotlib.use('TkAgg')
 
+
 def get_main_color(image):
     """
     Get most reveling color in image
@@ -124,14 +125,31 @@ def find_text_color(cropped_text):
     :return: text color in hex string format
     """
 
-    pixels = np.float32(cropped_text.reshape(-1, 3))
+    binary = preprocessing(cropped_text)
+    black_pixels = np.argwhere(binary == 0)
+    pixels = []
 
-    _, labels, palette = cv2.kmeans(pixels, 20, None, (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 200, .1), 10,
-                                    cv2.KMEANS_RANDOM_CENTERS)
-    _, counts = np.unique(labels, return_counts=True)
-    indices = np.argsort(counts)[::-1]
+    if len(black_pixels) > 1:
+        for pixel in black_pixels:
+            pixels.append(cropped_text[pixel[0]][pixel[1]])
+    else:
+        pixels.append(cropped_text[black_pixels[0][1]][black_pixels[0][1]])
 
-    bgr = palette[indices[1]].astype(np.int)
+    pixels = np.float32(pixels)
+
+    x = pixels.shape[0]
+
+    K = 10 if x > 10 else x
+
+    if K == 0:
+        bgr = [0, 0, 0]
+    else:
+        _, labels, palette = cv2.kmeans(pixels, K, None, (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 200, .1), 10,
+                                        cv2.KMEANS_RANDOM_CENTERS)
+        _, counts = np.unique(labels, return_counts=True)
+        indices = np.argsort(counts)[::-1]
+
+        bgr = palette[indices[0]].astype(np.int)
 
     return bgr2hex(bgr)
 
@@ -146,15 +164,14 @@ def find_text_position(text_image):
     x = int(h/8)
     text_image = text_image[x:-x, x:-x]
     binary = 255 - preprocessing(text_image)
-    binary = resizing(binary, h)
 
     hist = cv2.reduce(binary, 1, cv2.REDUCE_AVG).reshape(-1)
 
     count = np.bincount(hist)
     th = np.argmax(count)
 
-    uppers = [y for y in range(h - 1) if hist[y] <= th < hist[y + 1]]
-    lowers = [y for y in range(h - 1) if hist[y] > th >= hist[y + 1]]
+    uppers = [y for y in range(len(hist) - 1) if hist[y] <= th < hist[y + 1]]
+    lowers = [y for y in range(len(hist) - 1) if hist[y] > th >= hist[y + 1]]
 
     try:
         if len(uppers) > 3:
@@ -186,8 +203,6 @@ def find_text_position(text_image):
 
     cv2.imwrite("output/" + str(xmin) + "-" + str(ymin) + ".jpg", text_image)
 
-    return ymin, ymax
-
     return ymin if ymin > 0 else 10, ymax, xmin, xmax
 
 
@@ -197,6 +212,7 @@ def find_button_properties(button_image):
     :param button_image:
     :return: Information on button
     """
+
     height, width = button_image.shape[:2]
     ymin, ymax, xmin, xminx = find_text_position(button_image)
     text_height = 1.1 * (ymax - ymin)
@@ -217,6 +233,7 @@ def find_button_properties(button_image):
     bgr3 = button_image[1][x+1].astype(np.int32)
 
     bgr_mean = ((bgr1 + bgr2 + bgr3) / 3).astype(int)
+    print(bgr_mean)
 
     button_hex = bgr2hex(bgr_mean)
 

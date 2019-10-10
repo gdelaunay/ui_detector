@@ -7,7 +7,7 @@ from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
 
 IMAGE_PATH = "testing_data/test3.jpg"
-MODEL_NAME = 'ui_detection_graph_3363.pb'
+MODEL_NAME = 'v2/ui_detection_graph_3967.pb'
 
 # Number of different classes to detect
 NUM_CLASSES = 19
