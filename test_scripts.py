@@ -32,4 +32,3 @@ mockup.translate_raw_results()
 mockup.align_text_elements()
 mockup.create_xml_page()
 mockup.generate_pencil_file()
-:
