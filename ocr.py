@@ -10,6 +10,8 @@ def ocr(text_image):
 
     processed = preprocessing(text_image)
 
+    resized = resizing(processed, 120)
+
     pytesseract.pytesseract.tesseract_cmd = 'C:\\Tesseract-OCR\\tesseract'
 
     # Define config parameters.
@@ -18,9 +20,13 @@ def ocr(text_image):
     config = '-l eng+fra --oem 1 --psm 3'
 
     # Run tesseract OCR on image
-    text = pytesseract.image_to_string(processed, config=config)
+    text = pytesseract.image_to_string(resized, config=config)
 
-    return text
+    return filter_wrong_char(text)
+
+
+def filter_wrong_char(text):
+    return text.replace("<", "").replace("&", "").replace("|", "")
 
 
 def preprocessing(text_image):
@@ -30,15 +36,12 @@ def preprocessing(text_image):
     # converting to binary image
     _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_OTSU)
 
-    # optimal character height for Tesseract ?
-    resized = resizing(binary, 120)
-
     count_white = np.sum(binary > 0)
     count_black = np.sum(binary == 0)
     if count_black > count_white:
-        resized = 255 - resized
+        binary = 255 - binary
 
-    return resized
+    return binary
 
 
 # resizing to a fixed height (keeping proportions) for OCR efficiency and preprocessing consistency

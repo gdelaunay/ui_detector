@@ -76,14 +76,14 @@ class TextElement(Element):
 
             if len(self.color[0]) == 2:
                 border_color = self.color[0][1]
-                self.color = self.color[0][0]
+                color = self.color[0][0]
             else:
                 border_color = self.color[1]
-                self.color = self.color[0]
+                color = self.color[0]
 
             width, height = get_width_height(self)
 
-            shape = Rectangle((self.xmin, self.ymin), height, width, self.color, border_color, 1, "rect" + self.svg_id)
+            shape = Rectangle((self.xmin, self.ymin), height, width, color, border_color, 1, "rect" + self.svg_id)
 
             text = Text((self.xmin + width / 2, self.ymin + height / 2), self.text_value, self.text_size,
                         border_color, "text" + self.svg_id, 'dominant-baseline="middle" text-anchor="middle"')
@@ -107,15 +107,15 @@ class TextElement(Element):
             text_color = self.color[1]
             if len(self.color[0]) == 2:
                 border_color = self.color[0][1]
-                self.color = self.color[0][0]
+                color = self.color[0][0]
             else:
                 border_color = text_color
-                self.color = self.color[0]
+                color = self.color[0]
 
         self.xml_element = \
             first_tag + generated_id + '" transform="matrix(1,0,0,1,' + first_point + ')"> \n <p:metadata> \n ' + \
             properties_tag[0] + property_value + ']]></p:property> \n' \
-            '<p:property name="fillColor"><![CDATA[' + self.color + ']]></p:property> \n' \
+            '<p:property name="fillColor"><![CDATA[' + color + ']]></p:property> \n' \
             '<p:property name="textColor"><![CDATA[' + text_color + ']]></p:property> \n' \
             '<p:property name="textContent"><![CDATA[' + self.text_value + ']]></p:property> \n' \
             '<p:property name="textFont"><![CDATA[Arial|normal|normal|' + self.text_size + 'px|none]]></p:property> \n'\
@@ -140,7 +140,10 @@ class TextElement(Element):
             self.color = iu.find_text_color(cropped_text)
 
             bbox, _ = iu.detect_border(cropped_text)
-            self.text_dim = (bbox[0], bbox[1], bbox[2], bbox[3])
+            if bbox:
+                self.text_dim = (bbox[0], bbox[1])
+            else:
+                self.text_dim = (self.xmin, self.ymin)
         else:
             background_bgr = iu.find_background_color(cropped_text)
             background_hex = iu.bgr2hex(background_bgr)

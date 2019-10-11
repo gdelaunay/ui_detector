@@ -13,7 +13,7 @@ from colormap.colors import hex2rgb, rgb2hsv
 from image_utils import find_text_nb_of_lines
 
 
-IMAGE_PATH = "testing_data/image017.jpg"
+IMAGE_PATH = "testing_data/image005.jpg"
 
 
 image = cv2.imread(IMAGE_PATH)
