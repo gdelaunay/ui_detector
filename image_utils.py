@@ -217,6 +217,7 @@ def find_button_properties(button_image):
     height, width = button_image.shape[:2]
     ymin, ymax, xmin, xminx = find_text_position(button_image)
     text_height = 1.1 * (ymax - ymin)
+    text_width = 1.1 * (xmax - xmin)
 
     x = int(height / 10)
     ymin = ymin - x if ymin - x > 0 else 0
@@ -239,7 +240,7 @@ def find_button_properties(button_image):
 
     text_color = find_text_color(button_image)
 
-    return button_image, button_hex, text_color, text_height, lst_dim_text
+    return button_image, button_hex, text_color, text_height, text_width, lst_dim_text
 
 
 def find_background_color(image):

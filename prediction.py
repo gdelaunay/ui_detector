@@ -11,8 +11,8 @@ MODEL_NAME = 'ui_detection_graph_3363.pb'
 
 # Number of different classes to detect
 NUM_CLASSES = 19
-# Minimum confidence score under wich we don't show/save predictions
 
+# Minimum confidence score under wich we don't show/save predictions
 MIN_SCORE_TRESH = .4
 
 

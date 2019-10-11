@@ -11,7 +11,9 @@ from constants import icon_types, b64_icons, text_types, t_firsts_tags, t_proper
 from ocr import ocr, padding
 import numpy as np
 from img2svg import Rectangle, Text, Image, ButtonRectangle, Scene, Tspan
+import img2bmml
 
+PATH_BALSAMIQ = './export_balsamiq'
 
 class Element(ABC):
 
@@ -20,18 +22,33 @@ class Element(ABC):
         self.xmin = int(coordinates[1])
         self.ymax = int(coordinates[2])
         self.xmax = int(coordinates[3])
+
         self.xml_element = xml_element
+
+        self.svg_item = None
         self.svg_id = None
+
+        self.bmml_id = None
+        self.bmml_element = None
 
     @abstractmethod
     def redact_xml(self):
         """ Translate the Element object into xml pencil format """
         pass
 
+    @abstractmethod
     def create_svg_item(self):
         """
         Translate the Element object into sequence of SVG
         :return: SVG sequence
+        """
+        pass
+
+    @abstractmethod
+    def create_bmml_item(self):
+        """
+        Translate the Element object into sequence of bmml
+        :return: bmml sequence
         """
         pass
 
@@ -46,6 +63,17 @@ class TextElement(Element):
         self.color = color
         self.svg_item = svg_item
         self.text_dim = None
+        self.button_dim = None
+
+    def create_bmml_item(self):
+
+        if self.ptype is "text":
+            self.bmml_element = img2bmml.Text(self.bmml_id, self.xmin + self.text_dim[0], self.ymin + self.text_dim[1],
+                                 self.text_value, self.text_dim[2], self.text_dim[3])
+
+        else:
+            self.bmml_element = img2bmml.Button(self.bmml_id, self.xmin, self.ymin, self.text_value, self.button_dim[0],
+                                                self.button_dim[1])
 
     def create_svg_item(self):
 
@@ -136,19 +164,20 @@ class TextElement(Element):
         if self.ptype is "text":
             borderless = iu.remove_image_borders(cropped_text)
             text_height = borderless.shape[0]
+            text_width = borderless.shape[1]
 
             self.color = iu.find_text_color(cropped_text)
 
             bbox, _ = iu.detect_border(cropped_text)
             if bbox:
-                self.text_dim = (bbox[0], bbox[1])
+                self.text_dim = (bbox[0], bbox[1], bbox[2], bbox[3])
             else:
-                self.text_dim = (self.xmin, self.ymin)
+                self.text_dim = (self.xmin, self.ymin, text_width, text_height)
         else:
             background_bgr = iu.find_background_color(cropped_text)
             background_hex = iu.bgr2hex(background_bgr)
 
-            cropped_text, button_hex, text_color, text_height, dim_text = iu.find_button_properties(cropped_text)
+            cropped_text, button_hex, text_color, text_height, text_width, dim_text = iu.find_button_properties(cropped_text)
             button_hex, background_hex = iu.liken_colors(button_hex, background_hex, .15)
 
             self.text_dim = dim_text
@@ -167,6 +196,7 @@ class TextElement(Element):
 
         text_height = 0.75 * text_height if nb_of_lines > 1 else text_height
 
+        self.button_dim = (text_width, text_height)
         self.text_size = str(int(text_height / nb_of_lines))
 
 
@@ -178,6 +208,12 @@ class ImageElement(Element):
         self.b64 = b64
         self.svg_item = svg_item
         self.ptype = 'Image'
+
+    def create_bmml_item(self):
+        width, height = cv2.GetSize(self.image)
+        image_name = self.id + '.png'
+        self.store_image(PATH_BALSAMIQ, image_name)
+        self.bmml_element = img2bmml.Image(self.bmml_id, self.xmin, self.ymin, width, height, PATH_BALSAMIQ + self.image_name)
 
     def create_svg_item(self):
 
@@ -223,6 +259,14 @@ class ImageElement(Element):
         """
         _, encoded_image = cv2.imencode('.png', self.image)
         self.b64 = "data:image/png;base64," + b64encode(encoded_image).decode('ascii')
+
+    def store_image(self, path, filename):
+        """
+        Store image on hard drive
+        :param path:
+        """
+
+        cv2.imwrite(path + filename, self.image)
 
 
 class Icon(Element):
