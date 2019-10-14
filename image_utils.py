@@ -201,8 +201,6 @@ def find_text_position(text_image):
         xmin = lefters[0] if lefters else 0
         xmax = righters[-1] if righters else int(w * 0.6)
 
-    cv2.imwrite("output/" + str(xmin) + "-" + str(ymin) + ".jpg", text_image)
-
     return ymin if ymin > 0 else 10, ymax, xmin, xmax
 
 
@@ -233,7 +231,6 @@ def find_button_properties(button_image):
     bgr3 = button_image[1][x+1].astype(np.int32)
 
     bgr_mean = ((bgr1 + bgr2 + bgr3) / 3).astype(int)
-    print(bgr_mean)
 
     button_hex = bgr2hex(bgr_mean)
 

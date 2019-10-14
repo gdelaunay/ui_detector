@@ -7,12 +7,12 @@ from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
 
 IMAGE_PATH = "testing_data/test3.jpg"
-MODEL_NAME = 'v2/ui_detection_graph_3967.pb'
+MODEL_NAME = 'v2/ui_detection_graph_2775.pb'
 
 # Number of different classes to detect
 NUM_CLASSES = 19
 # Minimum confidence score under wich we don't show/save predictions
-
+cv2
 MIN_SCORE_TRESH = .4
 
 
@@ -79,7 +79,8 @@ def detection(image):
                 max_boxes_to_draw=1000)
 
             # display_output(image)
-            cv2.imwrite("output/" + MODEL_NAME + ".jpg", image)
+            filename = str("output/2" + MODEL_NAME.split("/")[-1] + ".jpg")
+            cv2.imwrite(filename, image)
             normalized_boxes = get_pixelwise_boxes_coordinates(image, selected_boxes)
 
     return normalized_boxes, selected_classes, selected_scores
