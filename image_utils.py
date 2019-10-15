@@ -76,6 +76,18 @@ def liken_colors(c1, c2, diff):
     return new_colors
 
 
+def similar_colors(c1, c2, diff):
+
+    lab1 = rgb2lab([[[c1[2], c1[1], c1[0]]]])
+    lab2 = rgb2lab([[[c2[2], c2[1], c2[0]]]])
+    cdiff = (deltaE_cie76(lab1, lab2) * 1e5)[0][0]
+
+    if cdiff < diff:
+        return True
+    else:
+        return False
+
+
 def detect_border(image):
     """
      find if an image has border (from approximate object detections result) by looking at first pixel color
@@ -135,21 +147,9 @@ def find_text_color(cropped_text):
     else:
         pixels.append(cropped_text[black_pixels[0][1]][black_pixels[0][1]])
 
-    pixels = np.float32(pixels)
+    b, g, r = get_xmost_occuring_color(pixels, 1)
 
-    x = pixels.shape[0]
-
-    K = 10 if x > 10 else x
-
-    if K == 0:
-        bgr = [0, 0, 0]
-    else:
-        _, labels, palette = cv2.kmeans(pixels, K, None, (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 200, .1), 10,
-                                        cv2.KMEANS_RANDOM_CENTERS)
-        _, counts = np.unique(labels, return_counts=True)
-        indices = np.argsort(counts)[::-1]
-
-        bgr = palette[indices[0]].astype(np.int)
+    bgr = [b, g, r]
 
     return bgr2hex(bgr)
 
@@ -161,8 +161,6 @@ def find_text_position(text_image):
     """
 
     h, w = text_image.shape[:2]
-    x = int(h/8)
-    text_image = text_image[x:-x, x:-x]
     binary = 255 - preprocessing(text_image)
 
     hist = cv2.reduce(binary, 1, cv2.REDUCE_AVG).reshape(-1)
@@ -201,7 +199,8 @@ def find_text_position(text_image):
         xmin = lefters[0] if lefters else 0
         xmax = righters[-1] if righters else int(w * 0.6)
 
-    return ymin if ymin > 0 else 10, ymax, xmin, xmax
+
+    return ymin, ymax, xmin, xmax
 
 
 def find_button_properties(button_image):
@@ -224,7 +223,6 @@ def find_button_properties(button_image):
     lst_dim_text = [ymin, ymax, xmin, xmax]
 
     button_image = button_image[ymin:ymax, xmin:xmax]
-
     x = int(xmax/2)
     bgr1 = (button_image[0][x]).astype(np.int32)
     bgr2 = button_image[0][x-1].astype(np.int32)
@@ -236,7 +234,100 @@ def find_button_properties(button_image):
 
     text_color = find_text_color(button_image)
 
-    return button_image, button_hex, text_color, text_height, lst_dim_text
+    return button_image, text_color, text_height, lst_dim_text
+
+
+def crop_button(button_image, background_color, coords):
+
+    class Break(Exception):
+        pass
+
+    button_color = get_xmost_occuring_color(button_image, 1)
+
+    if similar_colors(button_color, background_color, .2):
+        button_color = get_xmost_occuring_color(button_image, 2)
+
+    h, w = button_image.shape[:2]
+    binary = 255 - preprocessing(button_image)
+
+    yhist = cv2.reduce(binary, 1, cv2.REDUCE_AVG).reshape(-1)
+    xhist = cv2.reduce(binary, 0, cv2.REDUCE_AVG).reshape(-1)
+
+    th = 15
+
+    ylimits = [y for y in range(len(yhist) - 1) if ((yhist[y] < yhist[y + 1] - th) | (yhist[y] > yhist[y + 1] + th))]
+
+    xlimits = [x for x in range(len(xhist) - 1) if ((xhist[x] < xhist[x + 1] - th) | (xhist[x] > xhist[x + 1] + th))]
+
+    th = .3
+
+    try:
+        ymin = 0
+        if similar_colors(get_xmost_occuring_color(button_image[:1, :], 1), button_color, th):
+            raise Break
+        for y in ylimits:
+            if similar_colors(get_xmost_occuring_color(button_image[y + 1:y + 2, :], 1), button_color, th):
+                ymin = y + 1
+                raise Break
+    except Break:
+        pass
+
+    ylimits.reverse()
+
+    try:
+        ymax = h
+        if similar_colors(get_xmost_occuring_color(button_image[-2:-1, :], 1), button_color, th):
+            raise Break
+        for y in ylimits:
+            if similar_colors(get_xmost_occuring_color(button_image[y - 2:y - 1, :], 1), button_color, th):
+                ymax = y
+                raise Break
+    except Break:
+        pass
+
+    try:
+        xmin = 0
+        if similar_colors(get_xmost_occuring_color(button_image[:, :1], 1), button_color, th):
+            raise Break
+        for x in xlimits:
+            if similar_colors(get_xmost_occuring_color(button_image[:, x + 1:x + 2], 1), button_color, th):
+                xmin = x + 1
+                raise Break
+    except Break:
+        pass
+
+    xlimits.reverse()
+
+    try:
+        xmax = w
+        if similar_colors(get_xmost_occuring_color(button_image[:, -2:-1], 1), button_color, th):
+            raise Break
+        for x in xlimits:
+            if similar_colors(get_xmost_occuring_color(button_image[:, x - 2:x - 1], 1), button_color, th):
+                xmax = x
+                raise Break
+    except Break:
+        pass
+
+    cropped = button_image[ymin:ymax, xmin:xmax]
+
+    print("xlimts - " + str(xlimits) )
+    print(xmin)
+    print(xmax)
+    print("ylimits - " + str(ylimits))
+    print(ymin)
+    print(ymax)
+    cv2.imshow("iuhrfe0", cropped)
+    cv2.waitKey(0)
+
+    abs_ymin, abs_ymax, abs_xmin, abs_xmax = coords
+
+    abs_ymin += ymin
+    abs_ymax -= (h - ymax)
+    abs_xmin += xmin
+    abs_xmax -= (w - xmax)
+
+    return cropped, bgr2hex(button_color), abs_ymin, abs_ymax, abs_xmin, abs_xmax
 
 
 def find_background_color(image):
@@ -248,6 +339,28 @@ def find_background_color(image):
     pil_image = Image.fromarray(image)
     background_color = pil_image.getpixel((0, 0))
     return background_color
+
+
+def get_xmost_occuring_color(image, x):
+    """
+    :param image : image (np.array or list of pixels)
+    :return: xmost occurring color in image (in bgr)
+    """
+
+    if isinstance(image, list):
+        image = np.array(image)
+        pairs, counts = np.unique(image, axis=0, return_counts=True)
+        count_sort_index = np.argsort(-counts)
+        bgr = pairs[count_sort_index[0]]
+    else:
+        height, width = image.shape[:2]
+        image = Image.fromarray(image)
+        image = image.resize((width, height), resample=0)
+        pixels = image.getcolors(width * height)
+        sorted_pixels = sorted(pixels, key=lambda t: t[0])
+        bgr = sorted_pixels[-x][1]
+
+    return bgr
 
 
 def bgr2hex(bgr):

@@ -4,14 +4,17 @@ import cv2
 from matplotlib import pyplot as plt
 from base64 import b64encode
 import numpy as np
-import ocr
+from ocr import preprocessing
 from PIL import Image
 from prediction import detection
 from elements import TextElement
 from skimage.color import rgb2lab, deltaE_cie76
 from colormap.colors import hex2rgb, rgb2hsv
-from image_utils import find_text_nb_of_lines
+from image_utils import bgr2hex, find_text_nb_of_lines, resizing, get_xmost_occuring_color, similar_colors
+import matplotlib
+matplotlib.use('TkAgg')
 
+class Break(Exception): pass
 
 IMAGE_PATH = "testing_data/image017.jpg"
 
@@ -19,6 +22,7 @@ IMAGE_PATH = "testing_data/image017.jpg"
 image = cv2.imread(IMAGE_PATH)
 
 original_image = image.copy()
+
 detection_results = detection(image)
 
 mockup = Mockup("xero", original_image, detection_results)

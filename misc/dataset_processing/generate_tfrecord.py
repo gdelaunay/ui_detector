@@ -14,9 +14,9 @@ from collections import namedtuple, OrderedDict
 
 sys.path.append("../../models/research")
 
-DATASET_PATH = "D:/delaunay/Maquet/datasets/test/"
+DATASET_PATH = "D:/delaunay/Maquet/dataset/"
 
-T = "test"  # 'test' or 'train'
+T = "train"  # 'test' or 'train'
 CSV_INPUT = DATASET_PATH + "annotations/" + T + "_labels.csv"
 RECORD_OUTPUT = DATASET_PATH + "annotations/" + T + ".record"
 IMAGE_PATH = DATASET_PATH + "images/" + T
@@ -29,11 +29,7 @@ def class_text_to_int(row_label):
 
     for i, label in enumerate(LABELS):
         if row_label == label:
-            print(row_label + " -- " + label + " -- " + str(i+1))
             return i + 1
-        else:
-
-            None
 
 
 def split(df, group):
