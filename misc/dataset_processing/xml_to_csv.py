@@ -4,9 +4,9 @@ import pandas as pd
 import argparse
 import xml.etree.ElementTree as ET
 
-DATASET_PATH = "D:/delaunay/Maquet/datasets/test/"
+DATASET_PATH = "D:/delaunay/Maquet/dataset/"
 
-T = "test"  # 'test' or 'train'
+T = "train"  # 'test' or 'train'
 INPUT_DIR = DATASET_PATH + "images/" + T
 OUTPUT_FILE = DATASET_PATH + "/annotations/" + T + "_labels.csv"
 
