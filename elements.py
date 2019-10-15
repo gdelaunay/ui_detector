@@ -172,6 +172,7 @@ class TextElement(Element):
             self.color = iu.find_text_color(cropped_text)
 
             bbox, _ = iu.detect_border(cropped_text)
+
             if bbox:
                 self.text_dim = (bbox[0], bbox[1], bbox[2], bbox[3])
             else:
@@ -187,7 +188,7 @@ class TextElement(Element):
                                                                                                    self.xmin,
                                                                                                    self.xmax))
 
-            cropped_text, text_color, text_height, dim_text = iu.find_button_properties(cropped_text)
+            cropped_text, text_width, text_color, text_height, dim_text = iu.find_button_properties(cropped_text)
 
             button_hex, background_hex = iu.liken_colors(button_hex, background_hex, .15)
 
@@ -207,7 +208,7 @@ class TextElement(Element):
 
         text_height = 0.75 * text_height if nb_of_lines > 1 else text_height
 
-        self.button_dim = (text_width, text_height)
+        #self.button_dim = (text_width, text_height)
         self.text_size = str(int(text_height / nb_of_lines))
 
 

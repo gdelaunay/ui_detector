@@ -171,7 +171,6 @@ def find_text_position(text_image):
 
     uppers = [y for y in range(len(hist) - 1) if hist[y] <= th < hist[y + 1]]
     lowers = [y for y in range(len(hist) - 1) if hist[y] > th >= hist[y + 1]]
-
     try:
         if len(uppers) > 3:
             ymin = uppers[1]
@@ -222,7 +221,7 @@ def find_button_properties(button_image):
     xmax = width - x
 
     lst_dim_text = [ymin, ymax, xmin, xmax]
-
+    """
     button_image = button_image[ymin:ymax, xmin:xmax]
     x = int(xmax/2)
     bgr1 = (button_image[0][x]).astype(np.int32)
@@ -232,10 +231,10 @@ def find_button_properties(button_image):
     bgr_mean = ((bgr1 + bgr2 + bgr3) / 3).astype(int)
 
     button_hex = bgr2hex(bgr_mean)
-
+    """
     text_color = find_text_color(button_image)
 
-    return button_image, text_color, text_height, lst_dim_text
+    return button_image, text_width, text_color, text_height, lst_dim_text
 
 
 def crop_button(button_image, background_color, coords):
@@ -311,15 +310,6 @@ def crop_button(button_image, background_color, coords):
         pass
 
     cropped = button_image[ymin:ymax, xmin:xmax]
-
-    print("xlimts - " + str(xlimits) )
-    print(xmin)
-    print(xmax)
-    print("ylimits - " + str(ylimits))
-    print(ymin)
-    print(ymax)
-    cv2.imshow("iuhrfe0", cropped)
-    cv2.waitKey(0)
 
     abs_ymin, abs_ymax, abs_xmin, abs_xmax = coords
 

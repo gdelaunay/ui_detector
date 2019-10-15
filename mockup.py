@@ -186,7 +186,7 @@ class Mockup:
 
             for next_el in (x for x in self.elements if isinstance(x, TextElement)):
 
-                if el.ptype == next_el.ptype:
+                if el.ptype == next_el.ptype == "text":
 
                     h = (el.ymax - el.ymin) * .25
 
@@ -205,6 +205,28 @@ class Mockup:
 
                         if .9 * int(el.text_size) < int(next_el.text_size) < 1.1 * int(el.text_size):
                             next_el.text_size = el.text_size
+
+                if el.ptype == next_el.ptype in ("rectangle_button", "oval_button", "text_input"):
+
+                    h = (el.ymax - el.ymin) * .33
+                    a = b = False
+
+                    if (abs(next_el.xmin - el.xmax) < 150) & (el.ymin - h < next_el.ymin < el.ymin + h):
+                        next_el.ymin = el.ymin
+                        a = True
+
+                    if (abs(next_el.xmin - el.xmax) < 150) & (el.ymax- h < next_el.ymax < el.ymax + h):
+                        next_el.ymax = el.ymax
+                        b = True
+
+                    if a & b:
+                        el.text_size = next_el.text_size
+
+                    if (abs(next_el.ymin - el.ymax) < 150) & (el.xmin - h < next_el.xmin < el.xmin + h):
+                        next_el.xmin = el.xmin
+
+                    if (abs(next_el.ymin - el.ymax) < 150) & (el.xmax - h < next_el.xmax < el.xmax + h):
+                        next_el.xmax = el.xmax
 
     def extract_from_background(self, element):
         """

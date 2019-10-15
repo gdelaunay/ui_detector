@@ -12,8 +12,8 @@ def ocr(text_image):
 
     resized = resizing(processed, 120)
 
-    pytesseract.pytesseract.tesseract_cmd = 'C:\\Tesseract-OCR\\tesseract'
-    #pytesseract.pytesseract.tesseract_cmd = 'D:\\delaunay\\env\\Tesseract-OCR\\tesseract'
+    #pytesseract.pytesseract.tesseract_cmd = 'C:\\Tesseract-OCR\\tesseract'
+    pytesseract.pytesseract.tesseract_cmd = 'D:\\delaunay\\env\\Tesseract-OCR\\tesseract'
 
     # Define config parameters.
     # '-l eng'  for using the English language
