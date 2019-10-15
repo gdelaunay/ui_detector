@@ -13,7 +13,8 @@ import numpy as np
 from img2svg import Rectangle, Text, Image, ButtonRectangle, Scene, Tspan
 import img2bmml
 
-PATH_BALSAMIQ = './export_balsamiq'
+PATH_BALSAMIQ = './'
+
 
 class Element(ABC):
 
@@ -29,7 +30,7 @@ class Element(ABC):
         self.svg_id = None
 
         self.bmml_id = None
-        self.bmml_element = None
+        self.bmml_item = None
 
     @abstractmethod
     def redact_xml(self):
@@ -69,11 +70,13 @@ class TextElement(Element):
 
         if self.ptype is "text":
             self.bmml_element = img2bmml.Text(self.bmml_id, self.xmin + self.text_dim[0], self.ymin + self.text_dim[1],
-                                 self.text_value, self.text_dim[2], self.text_dim[3])
+                                 self.text_value, self.text_dim[2], self.text_dim[3], self.text_size)
 
         else:
             self.bmml_element = img2bmml.Button(self.bmml_id, self.xmin, self.ymin, self.text_value, self.button_dim[0],
                                                 self.button_dim[1])
+
+        return self.bmml_element
 
     def create_svg_item(self):
 
@@ -129,7 +132,7 @@ class TextElement(Element):
 
         if self.ptype is "text":
             property_value = self.text_value
-            text_color = border_color = self.color
+            color = text_color = border_color = self.color
         else:
             property_value = size
             text_color = self.color[1]
@@ -210,10 +213,12 @@ class ImageElement(Element):
         self.ptype = 'Image'
 
     def create_bmml_item(self):
-        width, height = cv2.GetSize(self.image)
-        image_name = self.id + '.png'
+        width, height = get_width_height(self)
+        image_name = str(self.bmml_id) + '.png'
         self.store_image(PATH_BALSAMIQ, image_name)
-        self.bmml_element = img2bmml.Image(self.bmml_id, self.xmin, self.ymin, width, height, PATH_BALSAMIQ + self.image_name)
+        self.bmml_element = img2bmml.Image(self.bmml_id, self.xmin, self.ymin, width, height, PATH_BALSAMIQ + image_name)
+
+        return self.bmml_element
 
     def create_svg_item(self):
 
@@ -250,6 +255,13 @@ class ImageElement(Element):
 
         borderless_image = iu.remove_image_borders(cropped_image)
 
+        border, _ = iu.detect_border(cropped_image)
+
+        # self.xmin = self.xmin + border[0]
+        # self.ymin = self.ymin + border[1]
+        # self.xmax = self.xmin + border[2]
+        # self.ymax = self.ymin + border[3]
+
         self.image = borderless_image
 
     def set_base64(self):
@@ -266,7 +278,7 @@ class ImageElement(Element):
         :param path:
         """
 
-        cv2.imwrite(path + filename, self.image)
+        cv2.imwrite(filename, self.image)
 
 
 class Icon(Element):

@@ -9,6 +9,7 @@ from PIL import Image
 import numpy as np
 import cv2
 import os
+import img2bmml
 
 
 class Mockup:
@@ -43,18 +44,24 @@ class Mockup:
                 if (element.text_value.strip() == "") & (element.ptype == "text"):
                     continue
 
-            if box_class in icon_types:
-                element = Icon(box, box_class)
-
-            if box_class is "image" or box_class is "checkbox":
+            else:
                 element = ImageElement(box)
                 element.extract_image(self.original_image)
                 element.set_base64()
 
+            # if box_class in icon_types:
+            #     element = Icon(box, box_class)
+            #
+            # if box_class is "image" or box_class is "checkbox":
+            #     element = ImageElement(box)
+            #     element.extract_image(self.original_image)
+            #     element.set_base64()
+
             self.extract_from_background(element)
 
-            # Only for SVG export
+            # Only for SVG and bmml export
             element.svg_id = element.ptype + str(self.current_id_svg)
+            element.bmml_id = self.current_id_svg
 
             self.elements.append(element)
 
@@ -81,6 +88,26 @@ class Mockup:
             svg.add(element.svg_item)
 
         return svg.write_svg(path)
+
+    def create_bmml(self, path):
+        """
+        Create the bmml with all sequence (all elements)
+        :param path: Path to write bmml
+        :return: String : Bmml Filename
+        """
+
+        height, width = self.original_image.shape[:2]
+
+        bmml = img2bmml.Sketch(self.current_id_svg, self.title, height, width)
+
+        background_element = ImageElement([0, 0, height, width], self.background_image)
+        background_element.store_image('./', 'background.png')
+        bmml.add(background_element.create_bmml_item())
+
+        for element in self.elements:
+            bmml.add(element.create_bmml_item())
+
+        return bmml.write_bmml(path)
 
     def create_xml_page(self):
         """

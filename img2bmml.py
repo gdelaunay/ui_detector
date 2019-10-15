@@ -1,6 +1,8 @@
 import os
 from abc import ABC, abstractmethod
 import urllib.parse
+from zipfile import ZipFile
+from os import walk
 
 
 # Utils methods
@@ -38,8 +40,8 @@ class GraphicElementBmml(ElementBmml, ABC):
         super().__init__(id)
         self.x = x
         self.y = y
-        self.width = width
-        self.height = height
+        self.width = int(width)
+        self.height = int(height)
 
     @abstractmethod
     def redact_bmml(self):
@@ -64,6 +66,7 @@ class Sketch(ElementBmml):
         Add bmml sequence to scene
         :param item:
         """
+
         self.items.append(item)
 
     def redact_bmml(self):
@@ -78,7 +81,7 @@ class Sketch(ElementBmml):
         var += ['<controls>\n']
 
         for item in self.items:
-            var += item.strarray()
+            var += item.redact_bmml()
 
         var += ["</controls>\n</mockup>"]
 
@@ -92,27 +95,47 @@ class Sketch(ElementBmml):
         :return: SVG Filename
         """
 
-        self.name = self.name + ".bmml"
-        file = open(os.path.join(path, self.name), 'w', encoding='UTF-8')
-        file.writelines(self.strarray())
+        file = open(os.path.join('./', self.name + ".bmml"), 'w', encoding='UTF-8')
+        file.writelines(self.redact_bmml())
         file.close()
+
+        files_lst = []
+
+        for file in os.listdir("./"):
+            if file.endswith(".png") or file.endswith(".bmml"):
+                files_lst.append(file)
+
+        with ZipFile(path + '/' + self.name + '.zip', 'w') as archive:
+            for file in files_lst:
+                if file.endswith('.png'):
+                    archive.write(file, 'assets/' + file)
+                else:
+                    archive.write(file)
+
+        for file in files_lst:
+            os.remove(file)
+
         return self.name
 
 
 class Text(GraphicElementBmml):
-    def __init__(self, id, x, y, text, width, height):
+    def __init__(self, id, x, y, text, width, height, text_size):
         super().__init__(id, x, y, width, height)
         self.text = text
+        self.text_size = text_size
 
     def redact_bmml(self):
         bmml_element = [
-            '<control controlID="{}" controlTypeID="com.balsamiq.mockups::SubTitle" x="{}" y="{}" w="-1" h="-1" measuredW="{}" measuredH="{}" zOrder="{}" locked="false" isInGroup="-1">\n'.format(
-                self.id, self.x, self.y, self.width, self.height, self.id
+            '<control controlID="{0}" controlTypeID="com.balsamiq.mockups::SubTitle" x="{1}" y="{2}" w="{3}" h="{4}" measuredW="{3}" measuredH="{4}" zOrder="{0}" locked="false" isInGroup="-1">\n'.format(
+                self.id, self.x, self.y, self.width, self.height
         )]
 
         text = text_treatment_4_balsamiq(self.text)
 
         bmml_element += ['<controlProperties>\n']
+        bmml_element += ['<size>{}</size>'.format(
+            self.text_size
+        )]
         bmml_element += ['<text>{}</text>'.format(
             text
         )]
@@ -129,8 +152,8 @@ class Button(GraphicElementBmml):
 
     def redact_bmml(self):
         bmml_element = [
-            '<control controlID="{}" controlTypeID="com.balsamiq.mockups::Button" x="{}" y="{}" w="-1" h="-1" measuredW="{}" measuredH="{}" zOrder="{}" locked="false" isInGroup="-1">\n'.format(
-                self.id, self.x, self.y, self.width, self.height, self.id
+            '<control controlID="{0}" controlTypeID="com.balsamiq.mockups::Button" x="{0}" y="{1}" w="{3}" h="{4}" measuredW="{3}" measuredH="{4}" zOrder="{0}" locked="false" isInGroup="-1">\n'.format(
+                self.id, self.x, self.y, self.width, self.height
             )]
 
         text = text_treatment_4_balsamiq(self.text)
@@ -152,10 +175,14 @@ class Image(GraphicElementBmml):
 
     def redact_bmml(self):
         bmml_element = [
-            '<control controlID="{}" controlTypeID="com.balsamiq.mockups::Image" x="{}" y="{}" w="-1" h="-1" measuredW="{}" measuredH="{}" zOrder="{}" locked="false" isInGroup="-1">\n'.format(
-                self.id, self.x, self.y, self.width, self.height, self.id
+            '<control controlID="{0}" controlTypeID="com.balsamiq.mockups::Image" x="{1}" y="{2}" w="{3}" h="{4}" measuredW="{3}" measuredH="{4}" zOrder="{0}" locked="false" isInGroup="-1">\n'.format(
+                self.id, self.x, self.y, self.width, self.height
             )]
         bmml_element += ['<controlProperties>\n']
         bmml_element += ['<src>./assets/{}</src>\n'.format(
-            self.path
+            self.path.split('/')[-1]
         )]
+
+        bmml_element += ['</controlProperties>\n</control>\n']
+
+        return bmml_element

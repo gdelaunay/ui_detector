@@ -215,7 +215,7 @@ def find_button_properties(button_image):
     """
 
     height, width = button_image.shape[:2]
-    ymin, ymax, xmin, xminx = find_text_position(button_image)
+    ymin, ymax, xmin, xmax = find_text_position(button_image)
     text_height = 1.1 * (ymax - ymin)
     text_width = 1.1 * (xmax - xmin)
 
