@@ -145,10 +145,13 @@ def find_text_color(cropped_text):
     if len(black_pixels) > 1:
         for pixel in black_pixels:
             pixels.append(cropped_text[pixel[0]][pixel[1]])
-    else:
-        pixels.append(cropped_text[black_pixels[0][1]][black_pixels[0][1]])
+        b, g, r = get_xmost_occuring_color(pixels, 1)
 
-    b, g, r = get_xmost_occuring_color(pixels, 1)
+    elif black_pixels.size == 0:
+        b, g, r = get_xmost_occuring_color(cropped_text, 2)
+
+    else:
+        b, g, r = cropped_text[black_pixels[0][0]][black_pixels[0][1]]
 
     bgr = [b, g, r]
 
@@ -221,8 +224,9 @@ def find_button_properties(button_image):
     xmax = width - x
 
     lst_dim_text = [ymin, ymax, xmin, xmax]
-    """
+
     button_image = button_image[ymin:ymax, xmin:xmax]
+    """
     x = int(xmax/2)
     bgr1 = (button_image[0][x]).astype(np.int32)
     bgr2 = button_image[0][x-1].astype(np.int32)
@@ -342,14 +346,21 @@ def get_xmost_occuring_color(image, x):
         image = np.array(image)
         pairs, counts = np.unique(image, axis=0, return_counts=True)
         count_sort_index = np.argsort(-counts)
-        bgr = pairs[count_sort_index[0]]
+        if len(pairs) >= x-1:
+            bgr = pairs[count_sort_index[x-1]]
+        else:
+            bgr = pairs[count_sort_index[0]]
     else:
         height, width = image.shape[:2]
         image = Image.fromarray(image)
         image = image.resize((width, height), resample=0)
         pixels = image.getcolors(width * height)
         sorted_pixels = sorted(pixels, key=lambda t: t[0])
-        bgr = sorted_pixels[-x][1]
+
+        if len(sorted_pixels) >= x:
+            bgr = sorted_pixels[-x][1]
+        else:
+            bgr = sorted_pixels[-1][1]
 
     return bgr
 

@@ -208,7 +208,7 @@ class TextElement(Element):
 
         text_height = 0.75 * text_height if nb_of_lines > 1 else text_height
 
-        #self.button_dim = (text_width, text_height)
+        self.button_dim = (self.xmax - self.xmin, self.ymax - self.ymax)
         self.text_size = str(int(text_height / nb_of_lines))
 
 
