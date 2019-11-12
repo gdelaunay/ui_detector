@@ -69,12 +69,12 @@ class TextElement(Element):
     def create_bmml_item(self):
 
         if self.ptype is "text":
-            self.bmml_element = img2bmml.Text(self.bmml_id, self.xmin + self.text_dim[0], self.ymin + self.text_dim[1],
-                                 self.text_value, self.text_dim[2], self.text_dim[3], self.text_size)
+            self.bmml_element = img2bmml.Text(self.bmml_id, self.xmin, self.ymin,
+                                 self.text_value, self.xmax - self.xmin, self.ymax - self.ymin, self.text_size)
 
         else:
-            self.bmml_element = img2bmml.Button(self.bmml_id, self.xmin, self.ymin, self.text_value, self.button_dim[0],
-                                                self.button_dim[1])
+            self.bmml_element = img2bmml.Button(self.bmml_id, self.xmin, self.ymin, self.text_value, self.xmax - self.xmin,
+                                                self.ymax - self.ymax)
 
         return self.bmml_element
 
@@ -99,7 +99,7 @@ class TextElement(Element):
                 self.svg_item = text
 
             else:
-                self.svg_item = Text((self.xmin + self.text_dim[0], self.ymin + self.text_dim[1]), self.text_value,
+                self.svg_item = Text((self.xmin + self.text_dim[0], self.ymin), self.text_value,
                                      self.text_size, self.color, self.svg_id)
 
         # Button, etc
@@ -181,14 +181,14 @@ class TextElement(Element):
             background_bgr = iu.find_background_color(cropped_text)
             background_hex = iu.bgr2hex(background_bgr)
 
-            cropped_text, button_hex, self.ymin, self.ymax, self.xmin, self.xmax = iu.crop_button(cropped_text,
-                                                                                                  background_bgr,
-                                                                                                  (self.ymin,
-                                                                                                   self.ymax,
-                                                                                                   self.xmin,
-                                                                                                   self.xmax))
+            cropped_button, button_hex, self.ymin, self.ymax, self.xmin, self.xmax = iu.crop_button(cropped_text,
+                                                                                                    background_bgr,
+                                                                                                    (self.ymin,
+                                                                                                     self.ymax,
+                                                                                                     self.xmin,
+                                                                                                     self.xmax))
 
-            cropped_text, text_width, text_color, text_height, dim_text = iu.find_button_properties(cropped_text)
+            cropped_text, text_width, text_color, text_height, dim_text = iu.find_button_properties(cropped_button)
 
             button_hex, background_hex = iu.liken_colors(button_hex, background_hex, .15)
 

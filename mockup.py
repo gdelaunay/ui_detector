@@ -38,6 +38,11 @@ class Mockup:
 
             box_class = classes[int(self.classes[i] - 1)]
 
+            """
+            if box_class in icon_types:
+                element = Icon(box, box_class)
+            """
+
             if box_class in text_types:
                 element = TextElement(box, box_class)
                 element.compute_text_properties(self.original_image)
@@ -49,14 +54,6 @@ class Mockup:
                 element.extract_image(self.original_image)
                 element.set_base64()
 
-            # if box_class in icon_types:
-            #     element = Icon(box, box_class)
-            #
-            # if box_class is "image" or box_class is "checkbox":
-            #     element = ImageElement(box)
-            #     element.extract_image(self.original_image)
-            #     element.set_base64()
-
             self.extract_from_background(element)
 
             # Only for SVG and bmml export
@@ -65,7 +62,7 @@ class Mockup:
 
             self.elements.append(element)
 
-        self.elements.sort(key=lambda x: x.xmax)
+        self.elements.sort(key=lambda x: x.xmin)
 
     def create_svg(self, path):
         """
@@ -147,13 +144,15 @@ class Mockup:
 
         self.xml_page = xml_header + xml_content + ' </p:Page> '
 
-    def generate_pencil_file(self):
+    def generate_pencil_file(self, path):
         """
-        Put in shape XML to be Pencil compatible and compact it with resources in Zip
+        Put in shape XML to be Pencil compatible and compact it with resources in Epz archive
         """
 
-        path = "output/mockup_" + self.title + "_" + self.generated_id + "/"
-        os.makedirs(path)
+        try:
+            os.makedirs(path + self.title)
+        except FileExistsError:
+            pass
 
         page_file = open("page_" + self.generated_id + ".xml", "wb")
         page_file.write(self.xml_page.encode("utf-8"))
@@ -170,12 +169,14 @@ class Mockup:
 
         filename = self.title.strip()
 
-        with ZipFile(path + filename + '.epz', 'w') as pencil_archive:
+        with ZipFile(path + "/" + filename + '.epz', 'w') as pencil_archive:
             pencil_archive.write('content.xml')
             pencil_archive.write('page_' + self.generated_id + '.xml')
 
-        os.rename("content.xml", path + "content.xml")
-        os.rename("page_" + self.generated_id + ".xml", path + "page_" + self.generated_id + ".xml")
+        os.remove("content.xml")
+        os.remove("page_" + self.generated_id + ".xml")
+
+        return filename + ".epz"
 
     def align_text_elements(self):
         """
@@ -230,8 +231,8 @@ class Mockup:
 
     def extract_from_background(self, element):
         """
-        Fill old position element in the background with most reveling color
-        :param element: Boxe prediction of Tensorfolw (coord)
+        Fill the background of an element position with (guessed) background color
+        :param element: Element object
         """
 
         w, h = ((element.xmax - element.xmin), (element.ymax - element.ymin))

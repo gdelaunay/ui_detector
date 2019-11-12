@@ -1,20 +1,25 @@
-
 __pycache__/
 *.py[cod]
 *$py.class
 
+test_scripts.py
+
 venv/
 
 training/
-trained_graphs/
-dataset/
 testing_data/
+trained_graphs/*
+trained_graphs/
 output/
-
+dataset/
+uploads/
+results_prediction/
+export_balsamiq/
+Tesseract-OCR/
 
 .idea/
 *.idea
 
-ui_detector_api/results_prediction/
-
-ui_detector_api/uploads/
+.vscode
+pencil
+dataset_android

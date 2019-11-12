@@ -6,8 +6,7 @@ import cv2
 from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
 
-IMAGE_PATH = "testing_data/test3.jpg"
-MODEL_NAME = 'v3/ui_detection_graph_4231.pb'
+MODEL_NAME = 'ui_detection_graph_3363.pb'
 
 # Number of different classes to detect
 NUM_CLASSES = 19
@@ -79,8 +78,7 @@ def detection(image):
                 max_boxes_to_draw=1000)
 
             # display_output(image)
-            filename = str("output/2" + MODEL_NAME.split("/")[-1] + ".jpg")
-            cv2.imwrite(filename, image)
+
             normalized_boxes = get_pixelwise_boxes_coordinates(image, selected_boxes)
 
     return normalized_boxes, selected_classes, selected_scores
@@ -162,9 +160,9 @@ def class_selection(sess, boxes, classes, scores, class_index):
 
 
 def get_pixelwise_boxes_coordinates(image, boxes):
-    """ params: original image and already processed (through overlapping removal = already squeezed) boxes and scores
+    """ params: original image and already processed (through overlapping removal = already squeezed) boxes
         returns: an array of boxes, each box being an array containing their pixelwise (detection output coordinates are
-                normalized) position and score """
+                normalized) position """
 
     # Getting image dimensions (box coordinates are normalized, we have to multiply them by the image size)
     im_height, im_width = image.shape[:2]

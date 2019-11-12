@@ -133,7 +133,7 @@ class Ellipse:
 
     def strarray(self):
         return ["  <ellipse id=\"%s\" cx=\"%d\" cy=\"%d\" rx=\"%d\" ry=\"%d\"\n" %\
-                (self.id, self.center[0],self.center[1],self.radius_x,self.radius_y),
+                (self.id, self.center[0],self.center[1],self.radiusx,self.radiusy),
                 "    style=\"fill:%s;stroke:%s;stroke-width:%d\"/>\n" % (colorstr(self.fill_color),colorstr(self.line_color),self.line_width)]
 
 
