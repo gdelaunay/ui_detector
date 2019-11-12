@@ -115,7 +115,7 @@ class Sketch(ElementBmml):
         for file in files_lst:
             os.remove(file)
 
-        return self.name
+        return self.name + ".zip"
 
 
 class Text(GraphicElementBmml):

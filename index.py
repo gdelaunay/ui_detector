@@ -6,8 +6,8 @@ import cv2
 from prediction import detection
 
 # Manage Folder
-UPLOAD_FOLDER = './uploads'
-RESULT_FOLDER = './results_prediction'
+UPLOAD_FOLDER = './uploads/'
+RESULT_FOLDER = './results_prediction/'
 
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg'}
 
@@ -18,6 +18,14 @@ app.config['RESULT_FOLDER'] = RESULT_FOLDER
 
 # 16 Mbits limit file update
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+
+
+try:
+    os.mkdir("output/")
+    os.mkdir(UPLOAD_FOLDER)
+    os.mkdir(RESULT_FOLDER)
+except FileExistsError:
+    pass
 
 
 def allowed_file(filename):
@@ -58,7 +66,16 @@ def upload_file():
             path_to_file = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(path_to_file)
 
-            new_filename = start_prediction_to_svg(path_to_file, filename)
+            select = request.form.get("export_type")
+
+            if select == "Svg":
+                new_filename = start_prediction_to_svg(path_to_file, filename)
+            elif select == "Balsamiq":
+                new_filename = start_prediction_to_balsamiq(path_to_file, filename)
+            elif select == "Pencil":
+                new_filename = start_prediction_to_pencil(path_to_file, filename)
+            else:
+                new_filename = start_prediction_to_svg(path_to_file, filename)
 
             return redirect(url_for('send_file',
                                     filename=new_filename))
@@ -87,11 +104,17 @@ def upload_file():
                         Ui Detector
                       </div>
                       <div class="card-body">
-                        <h5 class="card-title">Convertion capture d'écran site web vers Maquette en SVG</h5>
+                        <h5 class="card-title">Conversion capture d'écran site web vers Maquette en SVG</h5>
                         <p class="card-text">Sélectionner une image</p>
                         <form method=post enctype=multipart/form-data>
                             <input type=file name=file>
-                            <button type="submit" value=Upload class="btn btn-primary">Convertion</button>
+                            <select name="export_type">
+                                <option value="">Type d'export</option>
+                                <option value="Pencil">Pencil</option>
+                                <option value="Balsamiq">Balsamiq</option>
+                                <option value="Svg">Svg (Adobe XD)</option>
+                            </select>
+                            <button type="submit" value=Upload class="btn btn-primary">Conversion</button>
                         </form>
                       </div>
                     </div>
@@ -135,10 +158,56 @@ def start_prediction_to_svg(path_image, filename):
 
     mockup = Mockup(filename, original_image, detection_results)
     mockup.translate_raw_results()
+    mockup.align_text_elements()
     filename = mockup.create_svg(app.config['RESULT_FOLDER'])
 
     return filename
 
 
+def start_prediction_to_balsamiq(path_image, filename):
+    """
+    Launch prediction to convert screenshots to SVG
+    :param path_image:
+    :param filename:
+    :return:
+    """
+
+    image = cv2.imread(path_image)
+    original_image = image.copy()
+    detection_results = detection(image)
+
+    filename = filename.split('.')[0]
+
+    mockup = Mockup(filename, original_image, detection_results)
+    mockup.translate_raw_results()
+    mockup.align_text_elements()
+    filename = mockup.create_bmml(app.config['RESULT_FOLDER'])
+
+    return filename
+
+
+def start_prediction_to_pencil(path_image, filename):
+    """
+    Launch prediction to convert screenshots to SVG
+    :param path_image:
+    :param filename:
+    :return:
+    """
+
+    image = cv2.imread(path_image)
+    original_image = image.copy()
+    detection_results = detection(image)
+
+    filename = filename.split('.')[0]
+
+    mockup = Mockup(filename, original_image, detection_results)
+    mockup.translate_raw_results()
+    mockup.align_text_elements()
+    mockup.create_xml_page()
+    filename = mockup.generate_pencil_file(app.config['RESULT_FOLDER'])
+
+    return filename
+
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='0.0.0.0', debug=True, port=89)

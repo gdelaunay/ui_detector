@@ -174,16 +174,30 @@ def find_text_position(text_image):
 
     uppers = [y for y in range(len(hist) - 1) if hist[y] <= th < hist[y + 1]]
     lowers = [y for y in range(len(hist) - 1) if hist[y] > th >= hist[y + 1]]
-    try:
-        if len(uppers) > 3:
-            ymin = uppers[1]
-            ymax = lowers[-2] if lowers[-2] - ymin > 5 else lowers[-1]
+    limits = uppers + lowers
+    limits.sort()
+
+    if len(limits) < 2:
+        ymin = int(0.25 * h)
+        ymax = int(0.75 * h)
+
+    else:
+        if len(limits) % 2 == 1:
+            while len(limits) != 3:
+                limits.pop(0)
+                limits.pop(-1)
+                print("2 - " + str(len(limits)))
+            if (limits[1] - limits[0]) > (limits[2] - limits[1]):
+                limits.pop(2)
+            else:
+                limits.pop(1)
         else:
-            ymin = uppers[0]
-            ymax = lowers[-1]
-    except IndexError:
-        ymin = 0
-        ymax = int(0.6 * h)
+            while len(limits) > 2:
+                limits.pop(0)
+                limits.pop(-1)
+
+        ymin = limits[0]
+        ymax = limits[1]
 
     hist = cv2.reduce(binary, 0, cv2.REDUCE_AVG).reshape(-1)
 
@@ -217,25 +231,16 @@ def find_button_properties(button_image):
     text_height = 1.1 * (ymax - ymin)
     text_width = 1.1 * (xmax - xmin)
 
+    lst_dim_text = [ymin, ymax, xmin, xmax]
+
     x = int(height / 10)
     ymin = ymin - x if ymin - x > 0 else 0
     ymax = ymax + x if ymax + x < height else height
     xmin = x
     xmax = width - x
 
-    lst_dim_text = [ymin, ymax, xmin, xmax]
-
     button_image = button_image[ymin:ymax, xmin:xmax]
-    """
-    x = int(xmax/2)
-    bgr1 = (button_image[0][x]).astype(np.int32)
-    bgr2 = button_image[0][x-1].astype(np.int32)
-    bgr3 = button_image[1][x+1].astype(np.int32)
 
-    bgr_mean = ((bgr1 + bgr2 + bgr3) / 3).astype(int)
-
-    button_hex = bgr2hex(bgr_mean)
-    """
     text_color = find_text_color(button_image)
 
     return button_image, text_width, text_color, text_height, lst_dim_text

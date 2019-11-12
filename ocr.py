@@ -1,19 +1,21 @@
 #! venv/ python3
 # coding: utf-8
 
+import os
 import pytesseract
 import cv2
 import numpy as np
+import os
 
 
 def ocr(text_image):
 
     processed = preprocessing(text_image)
 
-    resized = resizing(processed, 120)
+    # resized = resizing(processed, 120)
 
-    #pytesseract.pytesseract.tesseract_cmd = 'C:\\Tesseract-OCR\\tesseract'
-    pytesseract.pytesseract.tesseract_cmd = 'D:\\delaunay\\env\\Tesseract-OCR\\tesseract'
+    if os.name == "nt":
+        pytesseract.pytesseract.tesseract_cmd = os.path.join('Tesseract-OCR\\tesseract.exe')
 
     # Define config parameters.
     # '-l eng'  for using the English language
@@ -21,7 +23,7 @@ def ocr(text_image):
     config = '-l eng+fra --oem 1 --psm 3'
 
     # Run tesseract OCR on image
-    text = pytesseract.image_to_string(resized, config=config)
+    text = pytesseract.image_to_string(processed, config=config)
 
     return filter_wrong_char(text)
 
