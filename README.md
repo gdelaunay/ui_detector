@@ -35,4 +35,4 @@ setup.bat
 </br>
 </br>
 
-_Application au stade de prototype, non maintenue._
+_Application au stade de prototype, non maintenue, le déploiment ne devrait pas fonctionner sur votre machine._
