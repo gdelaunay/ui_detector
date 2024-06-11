@@ -26,7 +26,7 @@ La libraire **OpenCV** est utilisée ici pour ses fonctionnalités de traitement
 Capture d'écran d'une page web :
 ![image017](https://github.com/gdelaunay/ui_detector/assets/55590623/adfc280a-cd8a-461a-bcc2-93e3a8bef696)
 
-Maquette modifiable produite (en **< 1 minute**):
+Maquette modifiable produite instantanément :
 ![maquetteCBIC](https://github.com/gdelaunay/ui_detector/assets/55590623/4348733b-7595-4fca-a230-a2b437ef230e)
 
 ## Installation
