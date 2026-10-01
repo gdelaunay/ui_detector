@@ -128,4 +128,4 @@ Export
 
 ## Licence
 
-Prototype interne Apside — usage éducatif.
+Prototype personnel de R&D, non maintenu. Distribué sous licence MIT — voir [LICENSE](LICENSE).
