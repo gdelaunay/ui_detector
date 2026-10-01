@@ -18,9 +18,9 @@ MIN_SCORE_TRESH = .4
 def detection(image):
 
     # Path to frozen detection graph. This is the actual model that is used for the object detection.
-    path_to_ckpt = 'trained_graphs\\' + MODEL_NAME + '\\frozen_inference_graph.pb'
+    path_to_ckpt = os.path.join('trained_graphs', MODEL_NAME, 'frozen_inference_graph.pb')
     # Path to labelmap = List of the strings that is used to add correct label for each box.
-    path_to_labels = os.path.join('dataset\\annotations', 'label_map.pbtxt')
+    path_to_labels = os.path.join('dataset', 'annotations', 'label_map.pbtxt')
 
     # Load a (frozen) Tensorflow model into memory.
     detection_graph = tf.Graph()

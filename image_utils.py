@@ -6,7 +6,7 @@ from skimage.color import rgb2lab, deltaE_cie76
 from colormap.colors import hex2rgb, rgb2hsv, hsv2rgb
 
 import matplotlib
-matplotlib.use('TkAgg')
+matplotlib.use('Agg')
 
 
 def get_main_color(image):

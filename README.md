@@ -43,7 +43,7 @@ Les régions contenant du texte sont converties en image binaire puis passées d
 
 | Format | Extension | Destiné à |
 |--------|-----------|-----------|
-| SVG | `.svg` | Adobe XD, Figma (export HTML/CSS) |
+| SVG | `.svg` | Adobe XD (export HTML/CSS ensuite) |
 | Balsamiq | `.zip` (bmml + assets) | Balsamiq |
 | Pencil | `.epz` | Evolus Pencil |
 

@@ -1,40 +1,32 @@
 FROM python:3.6-slim
 
-COPY . /srv/Trad'UI
-WORKDIR /srv/Trad'UI
-
-RUN apt-get clean \
+# --- System deps (cached until Dockerfile changes) ---
+RUN sed -i '/security/d' /etc/apt/sources.list \
+    && sed -i 's|http://deb.debian.org|http://archive.debian.org|g' /etc/apt/sources.list \
+    && rm -f /etc/apt/sources.list.d/* \
+    && apt-get clean \
     && apt-get -y update
-RUN apt-get -y install nginx \
-    && apt-get -y install python3-dev \
-    && apt-get -y install build-essential
 
-RUN apt-get -y install libpng-dev libjpeg-dev libtiff-dev zlib1g-dev \
-    && apt-get -y install gcc g++ \
-    && apt-get -y install autoconf automake libtool checkinstall
+RUN apt-get -y install wget nginx python3-dev build-essential \
+    libpng-dev libjpeg-dev libtiff-dev zlib1g-dev \
+    libsm6 libxext6 libxrender1 libglib2.0-0 \
+    gcc g++ cmake pkg-config \
+    autoconf automake libtool \
+    tesseract-ocr libtesseract-dev tesseract-ocr-eng tesseract-ocr-fra \
+    git libpcre3 libpcre3-dev
 
-RUN apt-get -y install git
+# --- Python deps (cached until requirements.txt changes) ---
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install -r /tmp/requirements.txt && pip install uwsgi
 
-RUN apt-get -y install libpcre3 libpcre3-dev
-RUN pip install -r requirements.txt --src /usr/local/src
-
-CMD ["wget http://www.leptonica.org/source/leptonica-1.73.tar.gz"]
-CMD ["tar -zxvf leptonica-1.73.tar.gz"]
-CMD ["./leptonica-1.73/configure"]
-CMD ["make"]
-CMD ["checkinstall", "-y"]
-CMD ["ldconfig"]
-
-CMD ["git clone https://github.com/tesseract-ocr/tesseract.git"]
-CMD ["./tesseract/autogen.sh"]
-CMD ["./tesseract/configure.sh"]
-CMD ["make"]
-CMD ["make install"]
-CMD ["ldconfig"]
-
-CMD ["git clone https://github.com/tesseract-ocr/tessdata.git"]
-CMD ["mv", "./tessdata/*", "/usr/local/share/tessdata/"]
+# --- App code (rebuilds fast, only this layer invalidated) ---
+COPY . /srv/ui-detector
+WORKDIR /srv/ui-detector
+RUN mkdir -p /srv/ui-detector/uploads /srv/ui-detector/results_prediction /srv/ui-detector/output \
+    && chown -R www-data:www-data /srv/ui-detector \
+    && chmod -R 775 /srv/ui-detector/uploads /srv/ui-detector/results_prediction /srv/ui-detector/output
 
 COPY nginx.conf /etc/nginx
-RUN chmod +x ./deploy.sh
+RUN sed -i 's/\r$//' deploy.sh && chmod +x deploy.sh
+
 CMD ["./deploy.sh"]
