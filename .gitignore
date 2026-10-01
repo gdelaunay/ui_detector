@@ -11,6 +11,7 @@ testing_data/
 trained_graphs/*
 trained_graphs/
 output/
+docs/
 dataset/
 uploads/
 results_prediction/
